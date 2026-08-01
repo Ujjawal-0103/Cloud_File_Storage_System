@@ -3,38 +3,42 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { loginSchema, LoginFormValues } from "@/lib/validations/auth";
+import { registerSchema, RegisterFormValues } from "@/lib/validations/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import Image from "next/image";
-import myLogo from "./CloudRage.png"; 
-import { Mail, Lock, Cloud, ArrowRight, Eye, EyeOff, AlertCircle } from "lucide-react";
+import myLogo from "../login/CloudRage.png"; 
+import { Mail, Lock, User, Cloud, ArrowRight, Eye, EyeOff, AlertCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 
-export default function LoginPage() {
+export default function RegisterPage() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<LoginFormValues>({
-    resolver: zodResolver(loginSchema),
+  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<RegisterFormValues>({
+    resolver: zodResolver(registerSchema),
   });
 
-  const onSubmit = async (data: LoginFormValues) => {
+  const onSubmit = async (data: RegisterFormValues) => {
     try {
-      setServerError(null); // Clear previous errors on new submit
+      setServerError(null);
       
-      const response = await fetch("/api/backend/auth/login", {
+      // Strip confirmPassword out so it stays entirely on the frontend and never hits the backend DTO
+      const { confirmPassword, ...payload } = data;
+      
+      const response = await fetch("/api/backend/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify(payload),
       });
       
       if (!response.ok) {
-        let errorMessage = "Invalid email or password";
+        let errorMessage = "Registration failed";
         try {
           const errorData = await response.json();
           errorMessage = Array.isArray(errorData.message) 
@@ -46,20 +50,14 @@ export default function LoginPage() {
         throw new Error(errorMessage);
       }
       
-      const result = await response.json();
-      
-      // Store the returned JWT token in cookies
-      if (result.access_token) {
-        document.cookie = `auth_token=${result.access_token}; path=/`;
-      }
-      
-      router.push("/");
+      // Successfully registered, redirect to login page
+      router.push("/login");
     } catch (error: any) {
-      setServerError(error.message || "Login failed");
+      setServerError(error.message || "Registration failed");
     }
   };
 
-  // Framer Motion Variants for staggered animations
+  // Framer Motion Variants
   const containerVariants = {
     hidden: { opacity: 0 },
     show: {
@@ -113,7 +111,7 @@ export default function LoginPage() {
           transition={{ duration: 0.6, delay: 0.2 }}
           className="flex flex-col items-center mb-6"
         >
-          <div className="relative w-48 h-48 overflow-hidden mb-2">
+          <div className="relative w-40 h-40 overflow-hidden mb-2">
             <Image
               src={myLogo}
               alt="CloudRage Logo"
@@ -128,8 +126,8 @@ export default function LoginPage() {
         {/* Enhanced Glassmorphism Card */}
         <div className="w-full bg-[rgba(22,27,48,0.72)] backdrop-blur-[20px] border border-white/10 shadow-[0_15px_40px_rgba(0,0,0,0.28)] rounded-[24px] overflow-hidden p-8">
           <div className="text-center mb-6">
-            <h2 className="text-[24px] font-bold text-white mb-2">Welcome Back</h2>
-            <p className="text-[16px] text-[#B7C1D8]">Sign in to access your CloudVault storage</p>
+            <h2 className="text-[24px] font-bold text-white mb-2">Create Account</h2>
+            <p className="text-[16px] text-[#B7C1D8]">Sign up to get started with CloudVault</p>
           </div>
 
           {/* Neon Violet Error Banner */}
@@ -151,6 +149,20 @@ export default function LoginPage() {
             onSubmit={handleSubmit(onSubmit)} 
             className="space-y-4"
           >
+            {/* Name Field */}
+            <motion.div variants={itemVariants} className="space-y-1.5 relative">
+              <Label htmlFor="name" className="text-[14px] text-[#D3D8E7]">Full Name</Label>
+              <div className="relative group">
+                <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-[#7D879C] group-focus-within:text-[#8B5CF6] transition-colors" />
+                <Input 
+                  id="name" type="text" placeholder="John Doe" 
+                  className="pl-11 bg-white/5 border-white/10 text-[16px] text-[#F8FAFC] placeholder:text-[#7D879C] rounded-xl focus:border-[#8B5CF6] focus:shadow-[0_0_0_3px_rgba(139,92,246,0.25)] transition-all h-12"
+                  {...register("name")} 
+                />
+              </div>
+              {errors.name && <p className="text-xs text-red-400 pt-0.5">{errors.name.message}</p>}
+            </motion.div>
+
             {/* Email Field */}
             <motion.div variants={itemVariants} className="space-y-1.5 relative">
               <Label htmlFor="email" className="text-[14px] text-[#D3D8E7]">Email Address</Label>
@@ -167,12 +179,7 @@ export default function LoginPage() {
             
             {/* Password Field */}
             <motion.div variants={itemVariants} className="space-y-1.5 relative">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password" className="text-[14px] text-[#D3D8E7]">Password</Label>
-                <Link href="/forgot-password" className="text-xs text-[#3B82F6] hover:text-[#8B5CF6] transition-colors">
-                  Forgot password?
-                </Link>
-              </div>
+              <Label htmlFor="password" className="text-[14px] text-[#D3D8E7]">Password</Label>
               <div className="relative group">
                 <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-[#7D879C] group-focus-within:text-[#8B5CF6] transition-colors" />
                 <Input 
@@ -191,6 +198,27 @@ export default function LoginPage() {
               {errors.password && <p className="text-xs text-red-400 pt-0.5">{errors.password.message}</p>}
             </motion.div>
 
+            {/* Confirm Password Field (Frontend Only Safety Check) */}
+            <motion.div variants={itemVariants} className="space-y-1.5 relative">
+              <Label htmlFor="confirmPassword" className="text-[14px] text-[#D3D8E7]">Confirm Password</Label>
+              <div className="relative group">
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-[#7D879C] group-focus-within:text-[#8B5CF6] transition-colors" />
+                <Input 
+                  id="confirmPassword" type={showConfirmPassword ? "text" : "password"} placeholder="••••••••" 
+                  className="pl-11 pr-11 bg-white/5 border-white/10 text-[16px] text-[#F8FAFC] placeholder:text-[#7D879C] rounded-xl focus:border-[#8B5CF6] focus:shadow-[0_0_0_3px_rgba(139,92,246,0.25)] transition-all h-12"
+                  {...register("confirmPassword")} 
+                />
+                <button 
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#7D879C] hover:text-white transition-colors"
+                >
+                  {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+              {errors.confirmPassword && <p className="text-xs text-red-400 pt-0.5">{errors.confirmPassword.message}</p>}
+            </motion.div>
+
             {/* Primary Submit Button */}
             <motion.div variants={itemVariants} className="pt-2">
               <Button 
@@ -201,7 +229,7 @@ export default function LoginPage() {
                 {isSubmitting ? (
                   <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }} className="w-5 h-5 border-2 border-white border-t-transparent rounded-full" />
                 ) : (
-                  <>Sign In <ArrowRight className="ml-2 h-5 w-5" /></>
+                  <>Create Account <ArrowRight className="ml-2 h-5 w-5" /></>
                 )}
               </Button>
             </motion.div>
@@ -221,7 +249,7 @@ export default function LoginPage() {
           <div className="grid grid-cols-2 gap-3">
             <button
               type="button"
-              onClick={() => alert("Google sign-in integration")}
+              onClick={() => alert("Google sign-up integration")}
               className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-white text-sm font-medium transition-all hover:scale-[1.02]"
             >
               <svg className="h-4 w-4" viewBox="0 0 24 24">
@@ -235,7 +263,7 @@ export default function LoginPage() {
 
             <button
               type="button"
-              onClick={() => alert("GitHub sign-in integration")}
+              onClick={() => alert("GitHub sign-up integration")}
               className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-white text-sm font-medium transition-all hover:scale-[1.02]"
             >
               <svg className="h-4 w-4 fill-current text-white" viewBox="0 0 24 24">
@@ -246,9 +274,9 @@ export default function LoginPage() {
           </div>
           
           <div className="mt-6 text-center text-sm text-[#B7C1D8]">
-            Don't have an account?{" "}
-            <Link href="/register" className="text-[#3B82F6] font-semibold hover:text-[#8B5CF6] transition-colors">
-              Sign up here
+            Already have an account?{" "}
+            <Link href="/login" className="text-[#3B82F6] font-semibold hover:text-[#8B5CF6] transition-colors">
+              Sign in here
             </Link>
           </div>
         </div>

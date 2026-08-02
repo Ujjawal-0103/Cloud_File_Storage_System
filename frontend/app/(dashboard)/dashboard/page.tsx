@@ -1,67 +1,476 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
+import {
+  Folder,
+  Upload,
+  Share2,
+  HardDrive,
+  ArrowUpRight,
+  LogOut,
+  Star,
+  Trash2,
+  FileText,
+  ImageIcon,
+  FileArchive,
+} from "lucide-react";
 
 export default function Dashboard() {
   const router = useRouter();
 
   const handleSignOut = () => {
-    // Delete the authentication cookie
-    document.cookie = "auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
-    
-    // Redirect to login page
+    document.cookie =
+      "auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
     router.push("/login");
   };
 
+  const quickActions = [
+    {
+      title: "Upload Files",
+      description: "Upload new files securely",
+      icon: Upload,
+    },
+    {
+      title: "My Files",
+      description: "Browse all stored files",
+      icon: Folder,
+    },
+    {
+      title: "Shared Files",
+      description: "Access shared folders",
+      icon: Share2,
+    },
+  ];
+
+  const recentFiles = [
+    {
+      icon: FileText,
+      name: "Resume.pdf",
+      size: "2.1 MB",
+      date: "Today",
+    },
+    {
+      icon: ImageIcon,
+      name: "Logo.png",
+      size: "580 KB",
+      date: "Yesterday",
+    },
+    {
+      icon: FileArchive,
+      name: "Project.zip",
+      size: "25 MB",
+      date: "2 days ago",
+    },
+  ];
+
   return (
-    <div className="min-h-screen bg-[#0B0A1A] text-white p-6 md:p-12">
-      <div className="max-w-5xl mx-auto space-y-8">
-        
-        {/* Header */}
-        <header className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
-                <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/>
-              </svg>
+    <div className="space-y-8">
+
+      {/* ================= HERO ================= */}
+
+      <section
+        className="
+          rounded-3xl
+          bg-[rgba(22,27,48,.72)]
+          backdrop-blur-[20px]
+          border
+          border-white/10
+          shadow-[0_15px_40px_rgba(0,0,0,.28)]
+          p-10
+        "
+      >
+
+        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8">
+
+          <div className="flex flex-col">
+
+            <div>
+
+              <h1 className="text-4xl font-bold text-white">
+                Welcome Back 👋
+              </h1>
+
+              <p className="text-[#B7C1D8] mt-3 text-lg">
+                Manage, upload and organize your files securely.
+              </p>
+
             </div>
-            <h1 className="text-2xl font-bold tracking-wide">CloudVault</h1>
+
           </div>
-          
-          <button 
+
+          <button
             onClick={handleSignOut}
-            className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-colors text-sm font-medium cursor-pointer"
+            className="
+              flex
+              items-center
+              gap-2
+
+              rounded-2xl
+
+              px-7
+              py-4
+
+              bg-gradient-to-r
+
+              from-[#8B5CF6]
+              via-[#6366F1]
+              to-[#06B6D4]
+
+              text-white
+
+              font-semibold
+
+              hover:scale-105
+
+              transition-all
+            "
           >
+            <LogOut size={18} />
             Sign Out
           </button>
-        </header>
 
-        {/* Main Content Area */}
-        <main className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          
-          {/* Welcome Card (Sprint Box removed) */}
-          <div className="col-span-1 md:col-span-2 bg-[#131127] border border-white/5 rounded-2xl p-8 shadow-xl flex flex-col justify-center">
-            <h2 className="text-3xl font-bold mb-4">Welcome to your Dashboard!</h2>
-            <p className="text-gray-400">
-              You have successfully routed to the protected dashboard. From here, you will be able to manage your folders, upload files, and monitor your cloud storage.
-            </p>
-          </div>
+        </div>
 
-          {/* Quick Stats Card */}
-          <div className="col-span-1 bg-[#131127] border border-white/5 rounded-2xl p-8 shadow-xl flex flex-col justify-center">
-            <h3 className="text-gray-400 font-medium mb-2">Storage Used</h3>
-            <div className="text-4xl font-bold text-white mb-2">0 GB</div>
-            <p className="text-sm text-gray-500">of 15 GB available</p>
-            
-            {/* Progress bar mock */}
-            <div className="w-full h-2 bg-gray-800 rounded-full mt-6 overflow-hidden">
-              <div className="w-[5%] h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full"></div>
+      </section>
+
+      {/* ================= STATS ================= */}
+
+      <section className="grid xl:grid-cols-4 md:grid-cols-2 gap-6">
+
+        <div className="rounded-3xl bg-[rgba(22,27,48,.72)] backdrop-blur-[20px] border border-white/10 p-7">
+
+          <div className="flex items-center justify-between">
+
+            <div>
+
+              <p className="text-[#B7C1D8]">
+                Storage Used
+              </p>
+
+              <h2 className="text-4xl font-bold text-white mt-3">
+                0 GB
+              </h2>
+
+              <p className="text-[#7D879C] mt-2">
+                of 15 GB available
+              </p>
+
             </div>
+
+            <HardDrive
+              size={40}
+              className="text-[#8B5CF6]"
+            />
+
           </div>
 
-        </main>
-      </div>
+          <div className="mt-6 h-2 bg-white/10 rounded-full overflow-hidden">
+
+            <div
+              className="
+                h-full
+                w-[5%]
+
+                rounded-full
+
+                bg-gradient-to-r
+
+                from-[#8B5CF6]
+                via-[#6366F1]
+                to-[#06B6D4]
+              "
+            />
+
+          </div>
+
+        </div>
+
+        <div className="rounded-3xl bg-[rgba(22,27,48,.72)] backdrop-blur-[20px] border border-white/10 p-7">
+
+          <Folder
+            size={34}
+            className="text-[#8B5CF6]"
+          />
+
+          <h2 className="text-4xl text-white font-bold mt-6">
+            0
+          </h2>
+
+          <p className="text-[#B7C1D8] mt-3">
+            Total Files
+          </p>
+
+        </div>
+
+        <div className="rounded-3xl bg-[rgba(22,27,48,.72)] backdrop-blur-[20px] border border-white/10 p-7">
+
+          <Share2
+            size={34}
+            className="text-[#06B6D4]"
+          />
+
+          <h2 className="text-4xl text-white font-bold mt-6">
+            0
+          </h2>
+
+          <p className="text-[#B7C1D8] mt-3">
+            Shared Files
+          </p>
+
+        </div>
+
+        <div className="rounded-3xl bg-[rgba(22,27,48,.72)] backdrop-blur-[20px] border border-white/10 p-7">
+
+          <Star
+            size={34}
+            className="text-yellow-400"
+          />
+
+          <h2 className="text-4xl text-white font-bold mt-6">
+            0
+          </h2>
+
+          <p className="text-[#B7C1D8] mt-3">
+            Favorites
+          </p>
+
+        </div>
+
+      </section>
+            {/* ================= QUICK ACTIONS ================= */}
+
+      <section>
+
+        <h2 className="text-2xl font-bold text-white mb-6">
+          Quick Actions
+        </h2>
+
+        <div className="grid md:grid-cols-3 gap-6">
+
+          {quickActions.map((item) => {
+
+            const Icon = item.icon;
+
+            return (
+
+              <button
+                key={item.title}
+                className="
+                  text-left
+
+                  rounded-3xl
+
+                  bg-[rgba(22,27,48,.72)]
+                  backdrop-blur-[20px]
+
+                  border
+                  border-white/10
+
+                  shadow-[0_15px_40px_rgba(0,0,0,.28)]
+
+                  p-7
+
+                  hover:-translate-y-1
+                  hover:border-[#8B5CF6]
+
+                  transition-all
+                "
+              >
+
+                <Icon
+                  size={34}
+                  className="text-[#8B5CF6]"
+                />
+
+                <h3 className="text-white text-xl font-semibold mt-6">
+                  {item.title}
+                </h3>
+
+                <p className="text-[#B7C1D8] mt-3">
+                  {item.description}
+                </p>
+
+                <ArrowUpRight
+                  size={22}
+                  className="mt-6 text-[#06B6D4]"
+                />
+
+              </button>
+
+            );
+
+          })}
+
+        </div>
+
+      </section>
+
+      {/* ================= RECENT FILES ================= */}
+
+      <section>
+
+        <h2 className="text-2xl font-bold text-white mb-6">
+          Recent Files
+        </h2>
+
+        <div
+          className="
+            rounded-3xl
+
+            bg-[rgba(22,27,48,.72)]
+            backdrop-blur-[20px]
+
+            border
+            border-white/10
+
+            shadow-[0_15px_40px_rgba(0,0,0,.28)]
+
+            overflow-hidden
+          "
+        >
+
+          {recentFiles.map((file, index) => {
+
+            const Icon = file.icon;
+
+            return (
+
+              <div
+                key={file.name}
+                className={`
+                  flex
+                  items-center
+                  justify-between
+
+                  px-8
+                  py-6
+
+                  ${
+                    index !== recentFiles.length - 1
+                      ? "border-b border-white/10"
+                      : ""
+                  }
+                `}
+              >
+
+                <div className="flex items-center gap-5">
+
+                  <div
+                    className="
+                      h-12
+                      w-12
+
+                      rounded-xl
+
+                      bg-white/5
+
+                      flex
+                      items-center
+                      justify-center
+                    "
+                  >
+
+                    <Icon
+                      size={22}
+                      className="text-[#8B5CF6]"
+                    />
+
+                  </div>
+
+                  <div>
+
+                    <h3 className="text-white font-semibold">
+                      {file.name}
+                    </h3>
+
+                    <p className="text-[#7D879C] text-sm mt-1">
+                      {file.date}
+                    </p>
+
+                  </div>
+
+                </div>
+
+                <span className="text-[#B7C1D8]">
+                  {file.size}
+                </span>
+
+              </div>
+
+            );
+
+          })}
+
+        </div>
+
+      </section>
+
+      {/* ================= STORAGE SUMMARY ================= */}
+
+      <section>
+
+        <div
+          className="
+            rounded-3xl
+
+            bg-[rgba(22,27,48,.72)]
+            backdrop-blur-[20px]
+
+            border
+            border-white/10
+
+            p-8
+          "
+        >
+
+          <div className="flex justify-between items-center">
+
+            <div>
+
+              <h2 className="text-white text-2xl font-bold">
+                Storage Overview
+              </h2>
+
+              <p className="text-[#B7C1D8] mt-2">
+                You're currently using
+                <span className="text-white font-semibold">
+                  {" "}0 GB{" "}
+                </span>
+                of your 15 GB storage.
+              </p>
+
+            </div>
+
+            <Trash2
+              size={42}
+              className="text-[#06B6D4]"
+            />
+
+          </div>
+
+          <div className="mt-8 h-3 rounded-full bg-white/10 overflow-hidden">
+
+            <div
+              className="
+                h-full
+                w-[5%]
+
+                rounded-full
+
+                bg-gradient-to-r
+
+                from-[#8B5CF6]
+                via-[#6366F1]
+                to-[#06B6D4]
+              "
+            />
+
+          </div>
+
+        </div>
+
+      </section>
+
     </div>
   );
 }

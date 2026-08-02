@@ -1,51 +1,226 @@
 "use client";
-import Link from 'next/link';
-import Image from 'next/image';
-import { Home, Folder, File, Trash, Star, Settings } from 'lucide-react'; // Assuming lucide-react for icons
+
+import Link from "next/link";
+import Image from "next/image";
+import { usePathname } from "next/navigation";
+import {
+  Home,
+  Folder,
+  Share2,
+  Star,
+  Trash2,
+  Settings,
+} from "lucide-react";
 
 const Sidebar = () => {
+  const pathname = usePathname();
+
   const navItems = [
-    { name: 'Dashboard', href: '/dashboard', icon: <Home size={20} /> },
-    { name: 'My Files', href: '/files', icon: <Folder size={20} /> },
-    { name: 'Shared', href: '/shared', icon: <File size={20} /> },
-    { name: 'Favorites', href: '/favorites', icon: <Star size={20} /> },
-    { name: 'Trash', href: '/trash', icon: <Trash size={20} /> },
+    {
+      name: "Dashboard",
+      href: "/dashboard",
+      icon: Home,
+    },
+    {
+      name: "My Files",
+      href: "/files",
+      icon: Folder,
+    },
+    {
+      name: "Shared",
+      href: "/shared",
+      icon: Share2,
+    },
+    {
+      name: "Favorites",
+      href: "/favorites",
+      icon: Star,
+    },
+    {
+      name: "Trash",
+      href: "/trash",
+      icon: Trash2,
+    },
   ];
 
   return (
-    <aside className="w-64 bg-[#0B0B13]/80 backdrop-blur-md border-r border-white/10 hidden md:flex flex-col">
-      <div className="p-6 flex items-center justify-center">
-      <Image 
-        src="/logo.png" 
-        alt="CloudRage Logo" 
-        width={160} 
-        height={60} 
-        className="w-36 drop-shadow-md" 
-        priority
-      />
-    </div>
-      <nav className="flex-1 px-4 py-4 space-y-2">
-        {navItems.map((item) => (
-          <Link
-            key={item.name}
-            href={item.href}
-            className="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-300 hover:text-white hover:bg-white/5 transition-all"
-          >
-            {item.icon}
-            <span className="font-medium">{item.name}</span>
-          </Link>
-        ))}
-      </nav>
+    <aside
+      className="
+        hidden
+        md:flex
+        w-72
+        flex-col
+        justify-between
 
-      <div className="p-4 border-t border-white/10">
+        bg-[rgba(22,27,48,.72)]
+        backdrop-blur-[20px]
+
+        border-r
+        border-white/10
+
+        shadow-[0_15px_40px_rgba(0,0,0,.28)]
+      "
+    >
+      {/* Logo */}
+
+      <div>
+        <div className="flex justify-center items-center py-8">
+
+          <img
+            src="/logo.png"
+            alt="CloudRage"
+            width={180}
+            height={60}
+            className="object-contain select-none"
+          />
+
+        </div>
+
+        {/* Navigation */}
+
+        <nav className="px-4 space-y-2">
+
+          {navItems.map((item) => {
+
+            const Icon = item.icon;
+            const active = pathname === item.href;
+
+            return (
+
+              <Link
+                key={item.name}
+                href={item.href}
+                className={`
+                  flex
+                  items-center
+                  gap-4
+
+                  px-5
+                  py-3.5
+
+                  rounded-2xl
+
+                  transition-all
+                  duration-300
+
+                  ${
+                    active
+                      ? "bg-white/10 border border-[#8B5CF6]/30 text-white"
+                      : "text-[#B7C1D8] hover:bg-white/5 hover:text-white"
+                  }
+                `}
+              >
+
+                <Icon
+                  size={21}
+                  className={
+                    active
+                      ? "text-[#8B5CF6]"
+                      : "text-[#7D879C]"
+                  }
+                />
+
+                <span className="font-medium tracking-wide">
+                  {item.name}
+                </span>
+
+              </Link>
+
+            );
+          })}
+
+        </nav>
+
+      </div>
+
+      {/* Bottom */}
+
+      <div className="border-t border-white/10 p-4">
+
         <Link
           href="/settings"
-          className="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-300 hover:text-white hover:bg-white/5 transition-all"
+          className="
+            flex
+            items-center
+            gap-4
+
+            px-5
+            py-3.5
+
+            rounded-2xl
+
+            text-[#B7C1D8]
+
+            hover:bg-white/5
+            hover:text-white
+
+            transition-all
+          "
         >
-          <Settings size={20} />
-          <span className="font-medium">Settings</span>
+
+          <Settings
+            size={21}
+            className="text-[#7D879C]"
+          />
+
+          <span className="font-medium">
+            Settings
+          </span>
+
         </Link>
+
+        {/* Storage Card */}
+
+        <div
+          className="
+            mt-8
+
+            rounded-3xl
+
+            bg-white/5
+
+            border
+
+            border-white/10
+
+            p-5
+          "
+        >
+
+          <p className="text-sm text-[#B7C1D8]">
+            Storage
+          </p>
+
+          <h2 className="text-3xl font-bold text-white mt-2">
+            0 GB
+          </h2>
+
+          <p className="text-xs text-[#7D879C] mt-1">
+            of 15 GB available
+          </p>
+
+          <div className="mt-5 h-2 bg-white/10 rounded-full overflow-hidden">
+
+            <div
+              className="
+                h-full
+                w-[5%]
+
+                rounded-full
+
+                bg-gradient-to-r
+                from-[#8B5CF6]
+                via-[#6366F1]
+                to-[#06B6D4]
+              "
+            />
+
+          </div>
+
+        </div>
+
       </div>
+
     </aside>
   );
 };

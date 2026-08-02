@@ -1,3 +1,4 @@
+"use client";
 import { Search, Bell, User } from 'lucide-react';
 
 const Navbar = () => {

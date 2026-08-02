@@ -1,3 +1,4 @@
+"use client";
 import Link from 'next/link';
 import Image from 'next/image';
 import { Home, Folder, File, Trash, Star, Settings } from 'lucide-react'; // Assuming lucide-react for icons

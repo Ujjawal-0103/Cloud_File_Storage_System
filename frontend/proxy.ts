@@ -16,7 +16,7 @@ export function proxy(request: NextRequest) {
 
   // Rule 2: If they ARE logged in and try to visit /login or /register, send them to the dashboard
   if (token && isAuthPage) {
-    return NextResponse.redirect(new URL('/', request.url));
+    return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
   return NextResponse.next();

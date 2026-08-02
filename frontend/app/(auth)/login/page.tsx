@@ -14,6 +14,7 @@ import { Mail, Lock, Cloud, ArrowRight, Eye, EyeOff, AlertCircle } from "lucide-
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 
+
 export default function LoginPage() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
@@ -53,7 +54,7 @@ export default function LoginPage() {
         document.cookie = `auth_token=${result.access_token}; path=/`;
       }
       
-      router.push("/");
+      router.push("/dashboard");
     } catch (error: any) {
       setServerError(error.message || "Login failed");
     }

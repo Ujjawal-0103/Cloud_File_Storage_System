@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
+import { FoldersModule } from './folders/folders.module';
 import { FilesModule } from './files/files.module';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
 
@@ -14,6 +15,7 @@ import { CloudinaryModule } from './cloudinary/cloudinary.module';
     PrismaModule,
     AuthModule,
     UsersModule,
+    FoldersModule,
     FilesModule,
     CloudinaryModule,
   ],

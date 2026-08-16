@@ -1,14 +1,93 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
+}
+
+model User {
+  id         String        @id @default(uuid())
+  name       String
+  email      String        @unique
+  password   String
+  avatar     String?
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+  activities ActivityLog[]
+  files      File[]
+  folders    Folder[]
+  sharedBy   SharedItem[]  @relation("SharedBy")
+  sharedWith SharedItem[]  @relation("SharedWith")
+}
+
+model Folder {
+  id           String        @id @default(uuid())
+  name         String
+  ownerId      String
+  parentId     String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  activityLogs ActivityLog[]
+  files        File[]
+  owner        User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  parent       Folder?       @relation("FolderHierarchy", fields: [parentId], references: [id])
+  children     Folder[]      @relation("FolderHierarchy")
+
+  @@index([ownerId])
+}
+
+model File {
+  id           String        @id @default(uuid())
+  name         String
+  originalName String
+  url          String
+  publicId     String
+  size         Int
+  mimeType     String
+  ownerId      String
+  folderId     String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  activityLogs ActivityLog[]
+  folder       Folder?       @relation(fields: [folderId], references: [id])
+  owner        User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  sharedItems  SharedItem[]
+
+  @@index([ownerId])
+  @@index([folderId])
+}
+
+model SharedItem {
+  id           String     @id @default(uuid())
+  fileId       String
+  sharedById   String
+  sharedWithId String
+  permission   Permission
+  createdAt    DateTime   @default(now())
+  file         File       @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  sharedBy     User       @relation("SharedBy", fields: [sharedById], references: [id], onDelete: Cascade)
+  sharedWith   User       @relation("SharedWith", fields: [sharedWithId], references: [id], onDelete: Cascade)
+
+  @@index([fileId])
+  @@index([sharedById])
+  @@index([sharedWithId])
+}
+
+model ActivityLog {
+  id        String       @id @default(uuid())
+  action    ActivityType
+  userId    String
+  fileId    String?
+  folderId  String?
+  createdAt DateTime     @default(now())
+  file      File?        @relation(fields: [fileId], references: [id])
+  folder    Folder?      @relation(fields: [folderId], references: [id])
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([fileId])
+  @@index([folderId])
 }
 
 enum Permission {
@@ -26,112 +105,4 @@ enum ActivityType {
   CREATE_FOLDER
   RENAME_FOLDER
   MOVE_FILE
-}
-
-model User {
-  id       String  @id @default(uuid())
-  name     String
-  email    String  @unique
-  password String
-  avatar   String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  folders    Folder[]
-  files      File[]
-  activities ActivityLog[]
-
-  sharedBy   SharedItem[] @relation("SharedBy")
-  sharedWith SharedItem[] @relation("SharedWith")
-}
-
-model Folder {
-  id   String @id @default(uuid())
-  name String
-
-  ownerId String
-  owner   User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-
-  parentId String?
-  parent   Folder?  @relation("FolderHierarchy", fields: [parentId], references: [id])
-  children Folder[] @relation("FolderHierarchy")
-
-  files File[]
-
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  activityLogs ActivityLog[]
-
-  @@index([ownerId])
-}
-
-model File {
-  id String @id @default(uuid())
-
-  name         String
-  originalName String
-
-  url      String
-  publicId String
-
-  size     Int
-  mimeType String
-
-  ownerId String
-  owner   User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-
-  folderId String?
-  folder   Folder? @relation(fields: [folderId], references: [id], onDelete: SetNull)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  sharedItems  SharedItem[]
-  activityLogs ActivityLog[]
-
-  @@index([ownerId])
-  @@index([folderId])
-}
-
-model SharedItem {
-  id String @id @default(uuid())
-
-  fileId String
-  file   File   @relation(fields: [fileId], references: [id], onDelete: Cascade)
-
-  sharedById String
-  sharedBy   User   @relation("SharedBy", fields: [sharedById], references: [id], onDelete: Cascade)
-
-  sharedWithId String
-  sharedWith   User   @relation("SharedWith", fields: [sharedWithId], references: [id], onDelete: Cascade)
-
-  permission Permission
-
-  createdAt DateTime @default(now())
-
-  @@index([fileId])
-  @@index([sharedById])
-  @@index([sharedWithId])
-}
-
-model ActivityLog {
-  id String @id @default(uuid())
-
-  action ActivityType
-
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  fileId String?
-  file   File?   @relation(fields: [fileId], references: [id])
-
-  folderId String?
-  folder   Folder? @relation(fields: [folderId], references: [id])
-
-  createdAt DateTime @default(now())
-
-  @@index([userId])
-  @@index([fileId])
-  @@index([folderId])
 }

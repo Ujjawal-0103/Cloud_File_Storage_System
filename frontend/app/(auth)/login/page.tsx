@@ -12,7 +12,7 @@ import Image from "next/image";
 import myLogo from "./CloudRage.png"; 
 import { Mail, Lock, Cloud, ArrowRight, Eye, EyeOff, AlertCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
+import { motion, Variants } from "framer-motion";
 
 
 export default function LoginPage() {
@@ -54,6 +54,15 @@ export default function LoginPage() {
         document.cookie = `auth_token=${result.access_token}; path=/`;
       }
       
+      // Use the name from the response if available, otherwise format the email handle nicely
+      const rawName = result.name || result.user?.name || data.email.split("@")[0];
+      const formattedName = rawName
+        .split(/[\s._-]+/)
+        .map((part: string) => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(" ");
+        
+      localStorage.setItem("user_name", formattedName);
+      
       router.push("/dashboard");
     } catch (error: any) {
       setServerError(error.message || "Login failed");
@@ -61,7 +70,7 @@ export default function LoginPage() {
   };
 
   // Framer Motion Variants for staggered animations
-  const containerVariants = {
+  const containerVariants: Variants = {
     hidden: { opacity: 0 },
     show: {
       opacity: 1,
@@ -69,7 +78,7 @@ export default function LoginPage() {
     }
   };
 
-  const itemVariants = {
+  const itemVariants: Variants = {
     hidden: { opacity: 0, y: 15 },
     show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } }
   };

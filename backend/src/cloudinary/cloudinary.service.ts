@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { v2 as cloudinary } from 'cloudinary';
+import 'multer';
 
 @Injectable()
 export class CloudinaryService {
@@ -12,13 +13,12 @@ export class CloudinaryService {
       api_secret: this.configService.get<string>('CLOUDINARY_API_SECRET'),
     });
   }
-
-
-  async uploadFile(file: Express.Multer.File) {
+async uploadFile(file: Express.Multer.File) {
     return new Promise((resolve, reject) => {
       cloudinary.uploader.upload_stream(
         {
           folder: 'cloudvault',
+          resource_type: 'auto', // <--- This is the magic key!
         },
         (error, result) => {
           if (error) {
@@ -28,6 +28,18 @@ export class CloudinaryService {
           }
         },
       ).end(file.buffer);
+    });
+  }
+
+  async deleteFile(publicId: string) {
+    return new Promise((resolve, reject) => {
+      cloudinary.uploader.destroy(publicId, (error, result) => {
+        if (error) {
+          reject(error);
+        } else {
+          resolve(result);
+        }
+      });
     });
   }
 }

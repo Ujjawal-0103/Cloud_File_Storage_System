@@ -11,19 +11,19 @@ export class RegisterDto {
     example: 'john@example.com',
   })
   @IsEmail()
-  email: string;
+  email!: string;
 
   @ApiProperty({
     example: 'John Doe',
   })
   @IsString()
   @IsNotEmpty()
-  name: string;
+  name!: string;
 
   @ApiProperty({
     example: 'Password@123',
   })
   @IsString()
   @MinLength(8)
-  password: string;
+  password!: string;
 }

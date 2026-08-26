@@ -6,13 +6,13 @@ export class LoginDto {
     example: 'user@example.com',
   })
   @IsEmail()
-  email: string;
+  email!: string;
 
   @ApiProperty({
     example: 'Password@123',
   })
   @IsString()
   @IsNotEmpty()
-  password: string;
+  password!: string;
 }
 

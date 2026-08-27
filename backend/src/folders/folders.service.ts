@@ -196,6 +196,5 @@ export class FoldersService {
 
     return tree;
   }
-
-
 }
+

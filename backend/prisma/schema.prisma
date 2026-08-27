@@ -19,6 +19,7 @@ model User {
   folders    Folder[]
   sharedBy   SharedItem[]  @relation("SharedBy")
   sharedWith SharedItem[]  @relation("SharedWith")
+  favorites  Favorite[]
 }
 
 model Folder {
@@ -49,13 +50,30 @@ model File {
   folderId     String?
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
+  deletedAt    DateTime?
   activityLogs ActivityLog[]
   folder       Folder?       @relation(fields: [folderId], references: [id])
   owner        User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   sharedItems  SharedItem[]
+  favorites    Favorite[]
 
   @@index([ownerId])
   @@index([folderId])
+  @@index([deletedAt])
+}
+
+model Favorite {
+  id        String   @id @default(uuid())
+  userId    String
+  fileId    String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  file File @relation(fields: [fileId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, fileId])
+  @@index([userId])
+  @@index([fileId])
 }
 
 model SharedItem {

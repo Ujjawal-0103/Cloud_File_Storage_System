@@ -6,6 +6,9 @@ import { UsersModule } from './users/users.module';
 import { FoldersModule } from './folders/folders.module';
 import { FilesModule } from './files/files.module';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
+import { SearchModule } from './search/search.module';
+import { FavoritesModule } from './favorites/favorites.module';
+import { TrashModule } from './trash/trash.module';
 
 @Module({
   imports: [
@@ -18,6 +21,10 @@ import { CloudinaryModule } from './cloudinary/cloudinary.module';
     FoldersModule,
     FilesModule,
     CloudinaryModule,
+    SearchModule,
+    FavoritesModule,
+    TrashModule,
   ],
+  controllers: [],
 })
 export class AppModule {}

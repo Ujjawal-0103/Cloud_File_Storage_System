@@ -1,21 +1,115 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class FilesService {
   constructor(
-    private cloudinaryService: CloudinaryService,
-    private prisma: PrismaService,
+    private readonly cloudinaryService: CloudinaryService,
+    private readonly prisma: PrismaService,
   ) {}
 
-  async findAll(folderId?: string, userId?: string) {
+  async findAll(
+    userId: string,
+    folderId?: string,
+    mimeType?: string,
+    sortBy: 'name' | 'size' | 'createdAt' | 'updatedAt' = 'createdAt',
+    order: 'asc' | 'desc' = 'desc',
+    page = 1,
+    limit = 20,
+  ) {
+    const skip = (page - 1) * limit;
+
+    const where: any = {
+      ownerId: userId,
+      deletedAt: null,
+    };
+
+    // Only filter by folder when folderId is actually provided.
+    if (folderId) {
+      where.folderId = folderId;
+    }
+
+    // Optional MIME type filter.
+    if (mimeType) {
+      where.mimeType = {
+        contains: mimeType,
+        mode: 'insensitive',
+      };
+    }
+
+    const [files, total] = await Promise.all([
+      this.prisma.file.findMany({
+        where,
+        orderBy: {
+          [sortBy]: order,
+        },
+        skip,
+        take: limit,
+      }),
+
+      this.prisma.file.count({
+        where,
+      }),
+    ]);
+
+    return {
+      data: files,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  async getRecentFiles(
+    userId: string,
+    limit = 10,
+  ) {
     return this.prisma.file.findMany({
       where: {
-        folderId: folderId || null,
         ownerId: userId,
+        deletedAt: null,
+      },
+      orderBy: {
+        updatedAt: 'desc',
+      },
+      take: limit,
+    });
+  }
+
+  async getStorageUsage(userId: string) {
+    const result = await this.prisma.file.aggregate({
+      where: {
+        ownerId: userId,
+        deletedAt: null,
+      },
+      _sum: {
+        size: true,
+      },
+      _count: {
+        id: true,
       },
     });
+
+    const usedBytes = result._sum.size ?? 0;
+    const fileCount = result._count.id;
+
+    return {
+      usedBytes,
+      usedKB: Number((usedBytes / 1024).toFixed(2)),
+      usedMB: Number((usedBytes / (1024 * 1024)).toFixed(2)),
+      usedGB: Number(
+        (usedBytes / (1024 * 1024 * 1024)).toFixed(4),
+      ),
+      fileCount,
+    };
   }
 
   async uploadFile(
@@ -23,22 +117,22 @@ export class FilesService {
     userId: string,
     folderId?: string,
   ) {
-    // Upload file to Cloudinary
-    const result: any = await this.cloudinaryService.uploadFile(file);
+    const result: any =
+      await this.cloudinaryService.uploadFile(file);
 
-    // Save file information in PostgreSQL, linking it to the folder if provided
-    const savedFile = await this.prisma.file.create({
-      data: {
-        name: result.public_id,
-        originalName: file.originalname,
-        url: result.secure_url,
-        publicId: result.public_id,
-        size: file.size,
-        mimeType: file.mimetype,
-        ownerId: userId,
-        folderId: folderId || null,
-      },
-    });
+    const savedFile =
+      await this.prisma.file.create({
+        data: {
+          name: result.public_id,
+          originalName: file.originalname,
+          url: result.secure_url,
+          publicId: result.public_id,
+          size: file.size,
+          mimeType: file.mimetype,
+          ownerId: userId,
+          folderId: folderId || null,
+        },
+      });
 
     return {
       message: 'File uploaded successfully',
@@ -47,35 +141,33 @@ export class FilesService {
   }
 
   async deleteFile(id: string, userId: string) {
-    // 1. Find the file and ensure it belongs to the authenticated user
     const file = await this.prisma.file.findFirst({
-      where: { id, ownerId: userId },
+      where: {
+        id,
+        ownerId: userId,
+        deletedAt: null,
+      },
     });
 
     if (!file) {
-      throw new NotFoundException('File not found or unauthorized');
+      throw new NotFoundException(
+        'File not found or already in trash',
+      );
     }
 
-    // 2. Delete the file from Cloudinary using its stored publicId
-    if (file.publicId) {
-      try {
-        const cloudinary = this.cloudinaryService as any;
-        if (typeof cloudinary.deleteFile === 'function') {
-          await cloudinary.deleteFile(file.publicId);
-        }
-      } catch (error) {
-        console.error('Error deleting asset from Cloudinary:', error);
-      }
-    }
-
-    // 3. Delete the record from PostgreSQL
-    await this.prisma.file.delete({
-      where: { id },
+    const updatedFile = await this.prisma.file.update({
+      where: {
+        id: file.id,
+      },
+      data: {
+        deletedAt: new Date(),
+      },
     });
 
     return {
-      message: 'File deleted successfully',
-      id,
+      message: 'File moved to trash',
+      file: updatedFile,
     };
   }
+
 }

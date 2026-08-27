@@ -17,7 +17,7 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { UpdateFolderDto } from './dto/update-folder.dto';
 
 @ApiTags('Folders')
-@ApiBearerAuth()
+@ApiBearerAuth('access-token')
 @UseGuards(JwtAuthGuard)
 @Controller('folders')
 export class FoldersController {

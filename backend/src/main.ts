@@ -6,12 +6,6 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  app.enableCors({
-    origin: 'http://localhost:3000',
-    credentials: true,
-  });
-
-
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -24,19 +18,34 @@ async function bootstrap() {
     .setTitle('Cloud File Storage API')
     .setDescription('Backend APIs for Cloud File Storage System')
     .setVersion('1.0')
-    .addBearerAuth()
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        name: 'Authorization',
+        description: 'Enter JWT access token',
+        in: 'header',
+      },
+      'access-token',
+    )
     .build();
 
-  const document = SwaggerModule.createDocument(app, config);
+  const document = SwaggerModule.createDocument(
+    app,
+    config,
+  );
+
   SwaggerModule.setup('api', app, document);
 
-  await app.listen(process.env.PORT ?? 3000);
+  await app.listen(process.env.PORT ?? 3001);
 
   console.log(
-    `🚀 Server running at http://localhost:${process.env.PORT ?? 3000}`,
+    `🚀 Server running at http://localhost:${process.env.PORT ?? 3001}`,
   );
+
   console.log(
-    `📄 Swagger Docs: http://localhost:${process.env.PORT ?? 3000}/api`,
+    `📄 Swagger Docs: http://localhost:${process.env.PORT ?? 3001}/api`,
   );
 }
 

@@ -4,6 +4,7 @@ import {
   Post,
   Get,
   Delete,
+  Patch,
   Param,
   Query,
   UploadedFile,
@@ -279,8 +280,68 @@ async getStorageUsage(
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
-
   async deleteFile(
+    @Param('id') id: string,
+    @CurrentUser()
+    user: {
+      id: string;
+      email: string;
+    },
+  ) {
+    // If the file is already trashed, permanently delete it; otherwise soft-delete it
+    try {
+      return await this.filesService.deleteFile(id, user.id);
+    } catch {
+      return await this.filesService.permanentlyDelete(id, user.id);
+    }
+  }
+
+  @Delete(':id/permanent')
+  @UseGuards(JwtAuthGuard)
+  async permanentlyDelete(
+    @Param('id') id: string,
+    @CurrentUser()
+    user: {
+      id: string;
+      email: string;
+    },
+  ) {
+    return this.filesService.permanentlyDelete(id, user.id);
+  }
+
+  @Patch(':id/trash')
+  @UseGuards(JwtAuthGuard)
+  async trashFile(
+    @Param('id') id: string,
+    @CurrentUser()
+    user: {
+      id: string;
+      email: string;
+    },
+  ) {
+    return this.filesService.deleteFile(id, user.id);
+  }
+
+  @Patch(':id/restore')
+  @UseGuards(JwtAuthGuard)
+  async restoreFile(
+    @Param('id') id: string,
+    @CurrentUser()
+    user: {
+      id: string;
+      email: string;
+    },
+  ) {
+    return this.filesService.restoreFile(id, user.id);
+  }
+
+  // =========================
+  // TOGGLE FAVORITE
+  // =========================
+
+  @Patch(':id/favorite')
+  @UseGuards(JwtAuthGuard)
+  async toggleFavorite(
     @Param('id') id: string,
 
     @CurrentUser()
@@ -288,10 +349,13 @@ async getStorageUsage(
       id: string;
       email: string;
     },
+
+    @Body('isFavorite') isFavorite?: boolean,
   ) {
-    return this.filesService.deleteFile(
+    return this.filesService.toggleFavorite(
       id,
       user.id,
+      isFavorite,
     );
   }
 }

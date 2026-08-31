@@ -64,6 +64,9 @@ export class FavoritesService {
     return this.prisma.favorite.findMany({
       where: {
         userId,
+        file: {
+          deletedAt: null,
+        },
       },
       include: {
         file: true,

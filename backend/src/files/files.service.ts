@@ -29,9 +29,11 @@ export class FilesService {
       deletedAt: null,
     };
 
-    // Only filter by folder when folderId is actually provided.
-    if (folderId) {
+    // Filter by folder: if folderId is provided and not 'all', filter by that folder; otherwise filter root files (folderId: null)
+    if (folderId && folderId !== 'all') {
       where.folderId = folderId;
+    } else if (folderId !== 'all') {
+      where.folderId = null;
     }
 
     // Optional MIME type filter.
@@ -45,6 +47,13 @@ export class FilesService {
     const [files, total] = await Promise.all([
       this.prisma.file.findMany({
         where,
+        include: {
+          favorites: {
+            where: {
+              userId,
+            },
+          },
+        },
         orderBy: {
           [sortBy]: order,
         },
@@ -57,8 +66,13 @@ export class FilesService {
       }),
     ]);
 
+    const formattedFiles = files.map((file) => ({
+      ...file,
+      isFavorite: Boolean(file.favorites && file.favorites.length > 0),
+    }));
+
     return {
-      data: files,
+      data: formattedFiles,
       pagination: {
         page,
         limit,
@@ -170,4 +184,107 @@ export class FilesService {
     };
   }
 
+  async restoreFile(id: string, userId: string) {
+    const file = await this.prisma.file.findFirst({
+      where: {
+        id,
+        ownerId: userId,
+        deletedAt: { not: null },
+      },
+    });
+
+    if (!file) {
+      throw new NotFoundException('Trashed file not found or unauthorized');
+    }
+
+    const restoredFile = await this.prisma.file.update({
+      where: { id: file.id },
+      data: { deletedAt: null },
+    });
+
+    return {
+      message: 'File restored successfully',
+      file: restoredFile,
+    };
+  }
+
+  async permanentlyDelete(id: string, userId: string) {
+    const file = await this.prisma.file.findFirst({
+      where: {
+        id,
+        ownerId: userId,
+      },
+    });
+
+    if (!file) {
+      throw new NotFoundException('File not found or unauthorized');
+    }
+
+    if (file.publicId) {
+      try {
+        await this.cloudinaryService.deleteFile(file.publicId, file.mimeType);
+      } catch (err) {
+        console.error('Error deleting from Cloudinary:', err);
+      }
+    }
+
+    await this.prisma.file.delete({
+      where: { id: file.id },
+    });
+
+    return {
+      message: 'File permanently deleted',
+      id: file.id,
+    };
+  }
+
+  async toggleFavorite(fileId: string, userId: string, isFavorite?: boolean) {
+    const file = await this.prisma.file.findFirst({
+      where: {
+        id: fileId,
+        ownerId: userId,
+      },
+    });
+
+    if (!file) {
+      throw new NotFoundException('File not found or unauthorized');
+    }
+
+    const existing = await this.prisma.favorite.findUnique({
+      where: {
+        userId_fileId: {
+          userId,
+          fileId,
+        },
+      },
+    });
+
+    const shouldBeFavorite = isFavorite !== undefined ? isFavorite : !existing;
+
+    if (shouldBeFavorite && !existing) {
+      await this.prisma.favorite.create({
+        data: {
+          userId,
+          fileId,
+        },
+      });
+    } else if (!shouldBeFavorite && existing) {
+      await this.prisma.favorite.delete({
+        where: {
+          userId_fileId: {
+            userId,
+            fileId,
+          },
+        },
+      });
+    }
+
+    return {
+      message: shouldBeFavorite
+        ? 'File added to favorites'
+        : 'File removed from favorites',
+      isFavorite: shouldBeFavorite,
+      fileId,
+    };
+  }
 }

@@ -68,4 +68,53 @@ export class TrashController {
       user.id,
     );
   }
+
+  @Delete(':fileId')
+  async deleteFile(
+    @Param('fileId') fileId: string,
+
+    @CurrentUser()
+    user: {
+      id: string;
+      email: string;
+    },
+  ) {
+    return this.trashService.permanentlyDeleteFile(
+      fileId,
+      user.id,
+    );
+  }
+
+  @Patch('folders/:folderId/restore')
+  async restoreFolder(
+    @Param('folderId') folderId: string,
+    @CurrentUser() user: { id: string },
+  ) {
+    return this.trashService.restoreFolder(
+      folderId,
+      user.id,
+    );
+  }
+
+  @Delete('folders/:folderId/permanent')
+  async permanentlyDeleteFolder(
+    @Param('folderId') folderId: string,
+    @CurrentUser() user: { id: string },
+  ) {
+    return this.trashService.permanentlyDeleteFolder(
+      folderId,
+      user.id,
+    );
+  }
+
+  @Delete('folders/:folderId')
+  async deleteFolder(
+    @Param('folderId') folderId: string,
+    @CurrentUser() user: { id: string },
+  ) {
+    return this.trashService.permanentlyDeleteFolder(
+      folderId,
+      user.id,
+    );
+  }
 }

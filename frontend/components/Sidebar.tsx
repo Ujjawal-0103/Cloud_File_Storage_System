@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -14,6 +15,11 @@ import {
 
 const Sidebar = () => {
   const pathname = usePathname();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const navItems = [
     {
@@ -79,14 +85,14 @@ const Sidebar = () => {
         {/* Navigation */}
 
         <nav className="px-4 space-y-2">
-
           {navItems.map((item) => {
-
             const Icon = item.icon;
-            const active = pathname === item.href;
+            const active =
+              mounted &&
+              (pathname === item.href ||
+                (item.href !== "/dashboard" && item.href !== "/" && pathname.startsWith(`${item.href}/`)));
 
             return (
-
               <Link
                 key={item.name}
                 href={item.href}
@@ -94,23 +100,18 @@ const Sidebar = () => {
                   flex
                   items-center
                   gap-4
-
                   px-5
                   py-3.5
-
                   rounded-2xl
-
                   transition-all
                   duration-300
-
                   ${
                     active
-                      ? "bg-white/10 border border-[#8B5CF6]/30 text-white"
+                      ? "bg-white/10 border border-[#8B5CF6]/40 text-white shadow-[0_0_15px_rgba(139,92,246,0.15)]"
                       : "text-[#B7C1D8] hover:bg-white/5 hover:text-white"
                   }
                 `}
               >
-
                 <Icon
                   size={21}
                   className={
@@ -123,50 +124,45 @@ const Sidebar = () => {
                 <span className="font-medium tracking-wide">
                   {item.name}
                 </span>
-
               </Link>
-
             );
           })}
-
         </nav>
 
       </div>
 
       {/* Bottom */}
-
       <div className="border-t border-white/10 p-4">
-
         <Link
           href="/settings"
-          className="
+          className={`
             flex
             items-center
             gap-4
-
             px-5
             py-3.5
-
             rounded-2xl
-
-            text-[#B7C1D8]
-
-            hover:bg-white/5
-            hover:text-white
-
             transition-all
-          "
+            duration-300
+            ${
+              mounted && pathname === "/settings"
+                ? "bg-white/10 border border-[#8B5CF6]/40 text-white shadow-[0_0_15px_rgba(139,92,246,0.15)]"
+                : "text-[#B7C1D8] hover:bg-white/5 hover:text-white"
+            }
+          `}
         >
-
           <Settings
             size={21}
-            className="text-[#7D879C]"
+            className={
+              mounted && pathname === "/settings"
+                ? "text-[#8B5CF6]"
+                : "text-[#7D879C]"
+            }
           />
 
           <span className="font-medium">
             Settings
           </span>
-
         </Link>
 
         {/* Storage Card */}

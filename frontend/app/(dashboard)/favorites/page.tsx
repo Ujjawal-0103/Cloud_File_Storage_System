@@ -5,23 +5,15 @@ import { useRouter } from "next/navigation";
 import {
   Folder,
   FileText,
-  Plus,
   Grid,
   List,
   Search,
-  MoreVertical,
-  ChevronRight,
-  Share2,
   Star,
   Trash2,
   Download,
-  FolderPlus,
-  HardDrive,
   FileImage,
   FileCode,
-  Upload,
 } from "lucide-react";
-import CreateFolderModal from "./CreateFolderModal";
 import { useToast } from "@/components/ui/Toast";
 
 interface FolderItem {
@@ -31,7 +23,6 @@ interface FolderItem {
   size: string;
   updatedAt: string;
   isFavorite?: boolean;
-  parentId?: string | null;
 }
 
 interface FileItem {
@@ -42,7 +33,6 @@ interface FileItem {
   updatedAt: string;
   isFavorite?: boolean;
   url?: string;
-  folderId?: string | null;
 }
 
 const getAuthToken = () => {
@@ -53,34 +43,24 @@ const getAuthToken = () => {
   return "";
 };
 
-interface FolderExplorerProps {
-  currentFolderId?: string;
-}
-
-export default function FolderExplorer({ currentFolderId }: FolderExplorerProps) {
+export default function FavoritesPage() {
   const router = useRouter();
   const { toast } = useToast();
 
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [searchQuery, setSearchQuery] = useState("");
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [folderToDelete, setFolderToDelete] = useState<{ id: string; name: string } | null>(null);
   const [previewFile, setPreviewFile] = useState<{ name: string; url: string; type: string } | null>(null);
 
   const [folders, setFolders] = useState<FolderItem[]>([]);
   const [files, setFiles] = useState<FileItem[]>([]);
-  const [searchResults, setSearchResults] = useState<{ files: FileItem[]; folders: FolderItem[] } | null>(null);
 
-  // 1. Fetch Folders
+  // 1. Fetch Favorite Folders
   useEffect(() => {
-    const fetchFolders = async () => {
+    const fetchFavoriteFolders = async () => {
       try {
         const token = getAuthToken();
-        const url = currentFolderId
-          ? `/api/backend/folders?parentId=${currentFolderId}`
-          : "/api/backend/folders";
-
-        const response = await fetch(url, {
+        const response = await fetch("/api/backend/folders", {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
@@ -91,37 +71,34 @@ export default function FolderExplorer({ currentFolderId }: FolderExplorerProps)
         if (response.ok) {
           const data = await response.json();
           const backendFolders = Array.isArray(data) ? data : data.folders || data.data || [];
-          const formattedFolders: FolderItem[] = backendFolders.map((f: any) => ({
-            id: f.id,
-            name: f.name,
-            itemCount: f.itemCount || 0,
-            size: f.size || "0 KB",
-            updatedAt: f.updatedAt ? new Date(f.updatedAt).toLocaleDateString() : "Just now",
-            isFavorite: Boolean(f.isFavorite),
-            parentId: f.parentId || f.parent_id || null,
-          }));
-          setFolders(formattedFolders);
-        } else {
-          console.error("Failed to load folders from backend. Status:", response.status);
+          const favoriteFolders: FolderItem[] = backendFolders
+            .filter((f: any) => f.isFavorite === true)
+            .map((f: any) => ({
+              id: f.id,
+              name: f.name,
+              itemCount: f.itemCount || 0,
+              size: f.size || "0 KB",
+              updatedAt: f.updatedAt ? new Date(f.updatedAt).toLocaleDateString() : "Just now",
+              isFavorite: true,
+            }));
+          setFolders(favoriteFolders);
         }
       } catch (error) {
-        console.error("Network error while fetching folders:", error);
+        console.error("Error fetching favorite folders:", error);
       }
     };
 
-    fetchFolders();
-  }, [currentFolderId]);
+    fetchFavoriteFolders();
+  }, []);
 
-  // 2. Fetch Files
+  // 2. Fetch Favorite Files
   useEffect(() => {
-    const fetchFiles = async () => {
+    const fetchFavoriteFiles = async () => {
       try {
         const token = getAuthToken();
-        const url = currentFolderId
-          ? `/api/backend/files?folderId=${currentFolderId}`
-          : "/api/backend/files";
 
-        const response = await fetch(url, {
+        // Attempt to fetch from favorites endpoint
+        const favResponse = await fetch("/api/backend/favorites", {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
@@ -129,39 +106,76 @@ export default function FolderExplorer({ currentFolderId }: FolderExplorerProps)
           },
         });
 
-        if (response.ok) {
-          const data = await response.json();
+        if (favResponse.ok) {
+          const favData = await favResponse.json();
+          const favList = Array.isArray(favData) ? favData : favData.favorites || [];
+
+          if (favList.length > 0) {
+            const formattedFiles: FileItem[] = favList.map((item: any) => {
+              const file = item.file || item;
+              const mime = (file.mimeType || file.mimetype || "").toLowerCase();
+              let fileType: "image" | "code" | "document" | "pdf" = "document";
+              if (mime.includes("image")) fileType = "image";
+              else if (mime.includes("pdf")) fileType = "pdf";
+
+              return {
+                id: file.id,
+                name: file.originalName || file.name,
+                type: fileType,
+                size: `${(file.size / 1024).toFixed(1)} KB`,
+                updatedAt: file.updatedAt ? new Date(file.updatedAt).toLocaleDateString() : "Just now",
+                url: file.url,
+                isFavorite: true,
+              };
+            });
+            setFiles(formattedFiles);
+            return;
+          }
+        }
+
+        // Fallback: fetch all files and filter where isFavorite === true
+        const filesResponse = await fetch("/api/backend/files?folderId=all", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (filesResponse.ok) {
+          const data = await filesResponse.json();
           const backendFiles = Array.isArray(data) ? data : data.data || data.files || [];
 
-          const formattedFiles: FileItem[] = backendFiles.map((file: any) => {
-            const mime = (file.mimeType || file.mimetype || "").toLowerCase();
-            let fileType: "image" | "code" | "document" | "pdf" = "document";
-            if (mime.includes("image")) fileType = "image";
-            else if (mime.includes("pdf")) fileType = "pdf";
+          const formattedFiles: FileItem[] = backendFiles
+            .filter((file: any) => file.isFavorite === true || (file.favorites && file.favorites.length > 0))
+            .map((file: any) => {
+              const mime = (file.mimeType || file.mimetype || "").toLowerCase();
+              let fileType: "image" | "code" | "document" | "pdf" = "document";
+              if (mime.includes("image")) fileType = "image";
+              else if (mime.includes("pdf")) fileType = "pdf";
 
-            return {
-              id: file.id,
-              name: file.originalName || file.name,
-              type: fileType,
-              size: `${(file.size / 1024).toFixed(1)} KB`,
-              updatedAt: file.updatedAt ? new Date(file.updatedAt).toLocaleDateString() : "Just now",
-              url: file.url,
-              isFavorite: Boolean(file.isFavorite || (file.favorites && file.favorites.length > 0)),
-              folderId: file.folderId || null,
-            };
-          });
+              return {
+                id: file.id,
+                name: file.originalName || file.name,
+                type: fileType,
+                size: `${(file.size / 1024).toFixed(1)} KB`,
+                updatedAt: file.updatedAt ? new Date(file.updatedAt).toLocaleDateString() : "Just now",
+                url: file.url,
+                isFavorite: true,
+              };
+            });
 
           setFiles(formattedFiles);
         }
       } catch (error) {
-        console.error("Error fetching files:", error);
+        console.error("Error fetching favorite files:", error);
       }
     };
 
-    fetchFiles();
-  }, [currentFolderId]);
+    fetchFavoriteFiles();
+  }, []);
 
-  // Toggle Favorite for File
+  // 3. Toggle Favorite for File
   const toggleFavoriteFile = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     const targetFile = files.find((f) => f.id === id);
@@ -201,7 +215,7 @@ export default function FolderExplorer({ currentFolderId }: FolderExplorerProps)
     }
   };
 
-  // Toggle Favorite for Folder
+  // 4. Toggle Favorite for Folder
   const toggleFavoriteFolder = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     const targetFolder = folders.find((f) => f.id === id);
@@ -224,106 +238,6 @@ export default function FolderExplorer({ currentFolderId }: FolderExplorerProps)
       });
     } catch (err) {
       console.error("Error toggling folder favorite:", err);
-    }
-  };
-
-  // 3. Create Folder
-  const handleCreateFolder = async (name: string) => {
-    try {
-      const token = getAuthToken();
-
-      const bodyData: any = { name: name };
-      if (currentFolderId) {
-        bodyData.parentId = currentFolderId;
-      }
-
-      const response = await fetch("/api/backend/folders", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(bodyData),
-      });
-
-      if (response.ok) {
-        const backendFolder = await response.json();
-        const newFolder: FolderItem = {
-          id: backendFolder.id || Date.now().toString(),
-          name: backendFolder.name || name,
-          itemCount: 0,
-          size: "0 KB",
-          updatedAt: "Just now",
-          isFavorite: false,
-          parentId: currentFolderId || null,
-        };
-        setFolders([newFolder, ...folders]);
-        toast.success(`Folder "${name}" created successfully!`);
-      } else {
-        let errorMessage = response.statusText;
-        try {
-          const errorData = await response.json();
-          errorMessage = errorData.message || errorMessage;
-        } catch (e) { }
-        toast.error(errorMessage || "Could not create folder.");
-      }
-    } catch (error) {
-      toast.error("Could not reach the backend. Is NestJS running?");
-    }
-  };
-
-  // 4. Upload File
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    try {
-      const token = getAuthToken();
-      const formData = new FormData();
-      formData.append("file", file);
-
-      if (currentFolderId) {
-        formData.append("folderId", currentFolderId);
-      }
-
-      const response = await fetch("/api/backend/files/upload", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        body: formData,
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        const uploadedName = data.file?.originalName || data.file?.name || file.name;
-        toast.success(`"${uploadedName}" uploaded successfully!`);
-        if (data.file) {
-          const mime = (data.file.mimeType || data.file.mimetype || "").toLowerCase();
-          let fileType: "image" | "code" | "document" | "pdf" = "document";
-          if (mime.includes("image")) fileType = "image";
-          else if (mime.includes("pdf")) fileType = "pdf";
-
-          const newFileItem: FileItem = {
-            id: data.file.id,
-            name: data.file.originalName || data.file.name,
-            type: fileType,
-            size: `${(data.file.size / 1024).toFixed(1)} KB`,
-            updatedAt: "Just now",
-            url: data.file.url,
-            isFavorite: false,
-            folderId: currentFolderId || null,
-          };
-          setFiles([newFileItem, ...files]);
-        }
-      } else {
-        const errorData = await response.json();
-        toast.error(errorData.message || "Upload failed. Please try again.");
-      }
-    } catch (error) {
-      toast.error("Network error while uploading file.");
-    } finally {
-      if (e.target) e.target.value = "";
     }
   };
 
@@ -359,7 +273,7 @@ export default function FolderExplorer({ currentFolderId }: FolderExplorerProps)
         });
       }
     } catch (error) {
-      console.error("Error soft-deleting folder:", error);
+      console.error("Error deleting folder:", error);
     }
   };
 
@@ -368,92 +282,20 @@ export default function FolderExplorer({ currentFolderId }: FolderExplorerProps)
     router.push(`/files/${folder.id}`);
   };
 
-  // 7. Global Search Effect across all subfolders and files
-  useEffect(() => {
-    const trimmed = searchQuery.trim();
-    if (!trimmed) {
-      setSearchResults(null);
-      return;
-    }
+  const filteredFolders = folders.filter((folder) =>
+    folder.name?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
-    const timer = setTimeout(async () => {
-      try {
-        const token = getAuthToken();
-        const response = await fetch(`/api/backend/search?q=${encodeURIComponent(trimmed)}`, {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          const backendFolders = data.folders || [];
-          const formattedFolders: FolderItem[] = backendFolders.map((f: any) => ({
-            id: f.id,
-            name: f.name,
-            itemCount: f.itemCount || 0,
-            size: f.size || "0 KB",
-            updatedAt: f.updatedAt ? new Date(f.updatedAt).toLocaleDateString() : "Just now",
-            isFavorite: Boolean(f.isFavorite),
-            parentId: f.parentId || null,
-          }));
-
-          const backendFiles = data.files || [];
-          const formattedFiles: FileItem[] = backendFiles.map((file: any) => {
-            const mime = (file.mimeType || file.mimetype || "").toLowerCase();
-            let fileType: "image" | "code" | "document" | "pdf" = "document";
-            if (mime.includes("image")) fileType = "image";
-            else if (mime.includes("pdf")) fileType = "pdf";
-
-            return {
-              id: file.id,
-              name: file.originalName || file.name,
-              type: fileType,
-              size: `${(file.size / 1024).toFixed(1)} KB`,
-              updatedAt: file.updatedAt ? new Date(file.updatedAt).toLocaleDateString() : "Just now",
-              url: file.url,
-              isFavorite: Boolean(file.isFavorite),
-              folderId: file.folderId || null,
-            };
-          });
-
-          setSearchResults({ folders: formattedFolders, files: formattedFiles });
-        }
-      } catch (err) {
-        console.error("Error searching:", err);
-      }
-    }, 150);
-
-    return () => clearTimeout(timer);
-  }, [searchQuery]);
-
-  const filteredFolders = folders.filter((folder: any) => {
-    const matchesSearch = folder.name?.toLowerCase().includes(searchQuery.toLowerCase());
-    const folderParentId = folder.parentId || folder.parent_id || null;
-    const matchesParent = currentFolderId
-      ? folderParentId === currentFolderId
-      : !folderParentId;
-
-    return matchesSearch && (searchQuery ? true : matchesParent);
-  });
-
-  const filteredFiles = files.filter((f: any) => {
-    const matchesSearch = f.name?.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesFolder = currentFolderId
-      ? f.folderId === currentFolderId
-      : !f.folderId;
-    return matchesSearch && (searchQuery ? true : (f.folderId !== undefined ? matchesFolder : true));
-  });
-
-  const displayedFolders = searchResults ? searchResults.folders : filteredFolders;
-  const displayedFiles = searchResults ? searchResults.files : filteredFiles;
+  const filteredFiles = files.filter((f) =>
+    f.name?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <div className="w-full bg-[rgba(22,27,48,0.72)] backdrop-blur-[20px] border border-white/10 shadow-[0_15px_40px_rgba(0,0,0,0.28)] rounded-[24px] p-8 space-y-6 text-slate-200">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/10 pb-5">
         <div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">Folder Explorer</h1>
+          <h1 className="text-2xl font-bold text-white tracking-tight">Favorites</h1>
+          <p className="text-xs text-[#7D879C] mt-1">Your starred folders and files for quick access.</p>
         </div>
 
         <div className="flex items-center space-x-3">
@@ -461,35 +303,12 @@ export default function FolderExplorer({ currentFolderId }: FolderExplorerProps)
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#7D879C]" />
             <input
               type="text"
-              placeholder="Search folders & files..."
+              placeholder="Search favorites..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full rounded-xl bg-white/5 border border-white/10 pl-9 pr-4 py-2 text-xs text-white placeholder-[#7D879C] focus:outline-none focus:border-[#8B5CF6] transition-all"
             />
           </div>
-
-          <input
-            type="file"
-            id="fileInput"
-            className="hidden"
-            onChange={handleFileUpload}
-          />
-
-          <button
-            onClick={() => document.getElementById("fileInput")?.click()}
-            className="flex items-center space-x-2 rounded-xl bg-white/5 border border-white/15 px-4 py-2 text-xs font-medium text-white hover:bg-white/10 transition-all"
-          >
-            <Upload className="h-4 w-4" />
-            <span>Upload File</span>
-          </button>
-
-          <button
-            onClick={() => setIsModalOpen(true)}
-            className="flex items-center space-x-2 rounded-xl bg-gradient-to-r from-[#8B5CF6] via-[#6366F1] to-[#06B6D4] px-4 py-2 text-xs font-medium text-white shadow-[0_0_15px_rgba(139,92,246,0.3)] hover:scale-[1.02] active:scale-[0.98] transition-all"
-          >
-            <FolderPlus className="h-4 w-4" />
-            <span>New Folder</span>
-          </button>
 
           <div className="flex items-center bg-white/5 border border-white/10 rounded-xl p-1">
             <button
@@ -513,88 +332,37 @@ export default function FolderExplorer({ currentFolderId }: FolderExplorerProps)
       </div>
 
       {/* Folders Section */}
-      <div className="space-y-4">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-[#7D879C]">
-          Folders ({displayedFolders.length})
-        </h2>
+      {folders.length > 0 && (
+        <div className="space-y-4">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-[#7D879C]">
+            Folders ({filteredFolders.length})
+          </h2>
 
-        {viewMode === "grid" ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {displayedFolders.map((folder) => (
-              <div
-                key={folder.id}
-                onClick={() => handleFolderClick(folder)}
-                className="group relative rounded-2xl bg-white/5 border border-white/10 p-4 hover:border-[#8B5CF6]/40 hover:bg-white/10 transition-all duration-200 shadow-md cursor-pointer"
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex items-center space-x-3 min-w-0 flex-1">
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#8B5CF6]/10 text-[#8B5CF6] group-hover:scale-105 transition-transform">
-                      <Folder className="h-6 w-6 fill-[#8B5CF6]/20" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <h3 className="font-semibold text-white text-sm truncate group-hover:text-[#C4B5FD] transition-colors" title={folder.name}>
-                        {folder.name}
-                      </h3>
-                      <p className="text-xs text-[#7D879C] mt-0.5 truncate">{folder.itemCount || 0} items</p>
-                    </div>
-                  </div>
-
-                  <div className={`flex items-center space-x-0.5 shrink-0 transition-opacity z-10 relative ${folder.isFavorite ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}>
-                    <button
-                      onClick={(e) => toggleFavoriteFolder(folder.id, e)}
-                      className={`p-1 transition-colors ${
-                        folder.isFavorite
-                          ? "text-yellow-400 fill-yellow-400"
-                          : "text-[#7D879C] hover:text-yellow-400"
-                      }`}
-                      title={folder.isFavorite ? "Remove from Favorites" : "Add to Favorites"}
-                    >
-                      <Star className={`h-4 w-4 ${folder.isFavorite ? "fill-yellow-400 text-yellow-400" : ""}`} />
-                    </button>
-                    <button
-                      onClick={(e) => confirmDeleteFolder(folder, e)}
-                      className="p-1 text-[#7D879C] hover:text-red-400 transition-colors"
-                      title="Delete Folder"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-
-                <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-between text-[11px] text-[#7D879C]">
-                  <span>{folder.size || "0 KB"}</span>
-                  <span>{folder.updatedAt || "Just now"}</span>
-                </div>
-              </div>
-            ))}
-
-            {displayedFolders.length === 0 && (
-              <div className="col-span-full py-8 text-center text-sm text-[#7D879C] bg-white/5 rounded-2xl border border-white/10 border-dashed">
-                {searchQuery ? `No folders matching "${searchQuery}".` : "No folders found. Click \"New Folder\" to create one."}
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="rounded-2xl bg-white/5 border border-white/10 overflow-hidden shadow-md">
-            <div className="divide-y divide-white/10">
-              {displayedFolders.map((folder) => (
+          {viewMode === "grid" ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {filteredFolders.map((folder) => (
                 <div
                   key={folder.id}
                   onClick={() => handleFolderClick(folder)}
-                  className="flex items-center justify-between p-4 hover:bg-white/10 transition-colors cursor-pointer"
+                  className="group relative rounded-2xl bg-white/5 border border-white/10 p-4 hover:border-[#8B5CF6]/40 hover:bg-white/10 transition-all duration-200 shadow-md cursor-pointer"
                 >
-                  <div className="flex items-center space-x-3">
-                    <Folder className="h-5 w-5 text-[#8B5CF6] fill-[#8B5CF6]/20" />
-                    <span className="font-medium text-sm text-white">{folder.name}</span>
-                  </div>
-                  <div className="flex items-center space-x-8 text-xs text-[#7D879C]">
-                    <span>{folder.itemCount || 0} items</span>
-                    <span>{folder.size || "0 KB"}</span>
-                    <span>{folder.updatedAt || "Just now"}</span>
-                    <div className="flex items-center space-x-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center space-x-3 min-w-0 flex-1">
+                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#8B5CF6]/10 text-[#8B5CF6] group-hover:scale-105 transition-transform">
+                        <Folder className="h-6 w-6 fill-[#8B5CF6]/20" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="font-semibold text-white text-sm truncate group-hover:text-[#C4B5FD] transition-colors" title={folder.name}>
+                          {folder.name}
+                        </h3>
+                        <p className="text-xs text-[#7D879C] mt-0.5 truncate">{folder.itemCount || 0} items</p>
+                      </div>
+                    </div>
+
+                    <div className={`flex items-center space-x-0.5 shrink-0 transition-opacity z-10 relative ${folder.isFavorite ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}>
                       <button
                         onClick={(e) => toggleFavoriteFolder(folder.id, e)}
-                        className={`transition-colors z-10 relative ${
+                        className={`p-1 transition-colors ${
                           folder.isFavorite
                             ? "text-yellow-400 fill-yellow-400"
                             : "text-[#7D879C] hover:text-yellow-400"
@@ -605,34 +373,87 @@ export default function FolderExplorer({ currentFolderId }: FolderExplorerProps)
                       </button>
                       <button
                         onClick={(e) => confirmDeleteFolder(folder, e)}
-                        className="text-[#7D879C] hover:text-red-400 transition-colors z-10 relative"
+                        className="p-1 text-[#7D879C] hover:text-red-400 transition-colors"
                         title="Delete Folder"
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>
                     </div>
                   </div>
+
+                  <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-between text-[11px] text-[#7D879C]">
+                    <span>{folder.size || "0 KB"}</span>
+                    <span>{folder.updatedAt || "Just now"}</span>
+                  </div>
                 </div>
               ))}
 
-              {displayedFolders.length === 0 && (
-                <div className="p-8 text-center text-sm text-[#7D879C]">
-                  {searchQuery ? `No folders matching "${searchQuery}".` : "No folders found. Click \"New Folder\" to create one."}
+              {filteredFolders.length === 0 && (
+                <div className="col-span-full py-8 text-center text-sm text-[#7D879C] bg-white/5 rounded-2xl border border-white/10 border-dashed">
+                  No matching favorite folders found.
                 </div>
               )}
             </div>
-          </div>
-        )}
-      </div>
+          ) : (
+            <div className="rounded-2xl bg-white/5 border border-white/10 overflow-hidden shadow-md">
+              <div className="divide-y divide-white/10">
+                {filteredFolders.map((folder) => (
+                  <div
+                    key={folder.id}
+                    onClick={() => handleFolderClick(folder)}
+                    className="flex items-center justify-between p-4 hover:bg-white/10 transition-colors cursor-pointer"
+                  >
+                    <div className="flex items-center space-x-3">
+                      <Folder className="h-5 w-5 text-[#8B5CF6] fill-[#8B5CF6]/20" />
+                      <span className="font-medium text-sm text-white">{folder.name}</span>
+                    </div>
+                    <div className="flex items-center space-x-8 text-xs text-[#7D879C]">
+                      <span>{folder.itemCount || 0} items</span>
+                      <span>{folder.size || "0 KB"}</span>
+                      <span>{folder.updatedAt || "Just now"}</span>
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={(e) => toggleFavoriteFolder(folder.id, e)}
+                          className={`transition-colors z-10 relative ${
+                            folder.isFavorite
+                              ? "text-yellow-400 fill-yellow-400"
+                              : "text-[#7D879C] hover:text-yellow-400"
+                          }`}
+                          title={folder.isFavorite ? "Remove from Favorites" : "Add to Favorites"}
+                        >
+                          <Star className={`h-4 w-4 ${folder.isFavorite ? "fill-yellow-400 text-yellow-400" : ""}`} />
+                        </button>
+                        <button
+                          onClick={(e) => confirmDeleteFolder(folder, e)}
+                          className="text-[#7D879C] hover:text-red-400 transition-colors z-10 relative"
+                          title="Delete Folder"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
+                {filteredFolders.length === 0 && (
+                  <div className="p-8 text-center text-sm text-[#7D879C]">
+                    No matching favorite folders found.
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Files Section */}
-      <div className="space-y-4 pt-4">
+      <div className="space-y-4 pt-2">
         <h2 className="text-sm font-semibold uppercase tracking-wider text-[#7D879C]">
-          Files ({displayedFiles.length})
+          Files ({filteredFiles.length})
         </h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {displayedFiles.map((file) => (
+          {filteredFiles.map((file) => (
             <div
               key={file.id}
               className="group relative rounded-2xl bg-white/5 border border-white/10 p-4 hover:border-[#06B6D4]/40 hover:bg-white/10 transition-all duration-200 shadow-md"
@@ -707,11 +528,10 @@ export default function FolderExplorer({ currentFolderId }: FolderExplorerProps)
                     </button>
                   )}
 
-                  {/* Delete Button (Soft Delete) */}
+                  {/* Delete Button */}
                   <button
                     onClick={async (e) => {
                       e.stopPropagation();
-                      // Optimistic UI update - remove immediately from local state
                       setFiles((prev) => prev.filter((f) => f.id !== file.id));
                       toast.info(`"${file.name}" moved to Trash`);
 
@@ -723,18 +543,17 @@ export default function FolderExplorer({ currentFolderId }: FolderExplorerProps)
                         });
 
                         if (!res.ok) {
-                          // Fallback to DELETE /api/backend/files/:id (which triggers soft delete)
                           await fetch(`/api/backend/files/${file.id}`, {
                             method: "DELETE",
                             headers: { Authorization: `Bearer ${token}` },
                           });
                         }
                       } catch (err) {
-                        console.error("Error soft-deleting file:", err);
+                        toast.error("Error moving file to trash.");
                       }
                     }}
                     className="p-1 text-[#7D879C] hover:text-red-400 transition-colors"
-                    title="Move to Trash"
+                    title="Delete File"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -748,19 +567,21 @@ export default function FolderExplorer({ currentFolderId }: FolderExplorerProps)
             </div>
           ))}
 
-          {displayedFiles.length === 0 && (
+          {filteredFiles.length === 0 && folders.length === 0 && (
+            <div className="col-span-full py-12 text-center text-sm text-[#7D879C] bg-white/5 rounded-2xl border border-white/10 border-dashed">
+              <Star className="h-8 w-8 text-[#7D879C]/50 mx-auto mb-3" />
+              <p className="font-medium text-white">{searchQuery ? `No favorites matching "${searchQuery}"` : "No favorites yet"}</p>
+              <p className="text-xs text-[#7D879C] mt-1">{searchQuery ? "Try searching for a different term." : "Click the star icon on any folder or file to add it to your favorites."}</p>
+            </div>
+          )}
+
+          {filteredFiles.length === 0 && folders.length > 0 && (
             <div className="col-span-full py-8 text-center text-sm text-[#7D879C] bg-white/5 rounded-2xl border border-white/10 border-dashed">
-              {searchQuery ? `No files matching "${searchQuery}".` : "No files uploaded yet."}
+              {searchQuery ? `No favorite files matching "${searchQuery}".` : "No favorite files found."}
             </div>
           )}
         </div>
       </div>
-
-      <CreateFolderModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onCreate={handleCreateFolder}
-      />
 
       {/* File Preview Modal */}
       {previewFile && (

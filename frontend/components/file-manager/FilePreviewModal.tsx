@@ -2,6 +2,7 @@
 
 import React from "react";
 import { X, Download, FileText, Image as ImageIcon, FileCode } from "lucide-react";
+import { useToast } from "@/components/ui/Toast";
 
 interface FilePreviewModalProps {
   isOpen: boolean;
@@ -14,11 +15,15 @@ export default function FilePreviewModal({
   onClose,
   file,
 }: FilePreviewModalProps) {
+  const { toast } = useToast();
   if (!isOpen || !file) return null;
 
   const handleDownload = () => {
-    // In a real app, trigger actual file download here
-    alert(`Downloading ${file.name}...`);
+    if (file.url) {
+      window.open(file.url, "_blank");
+    } else {
+      toast.info(`Preparing download for ${file.name}...`);
+    }
   };
 
   return (

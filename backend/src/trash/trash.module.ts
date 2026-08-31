@@ -5,11 +5,13 @@ import { TrashService } from './trash.service';
 
 import { PrismaModule } from '../prisma/prisma.module';
 import { CloudinaryModule } from '../cloudinary/cloudinary.module';
+import { FoldersModule } from '../folders/folders.module';
 
 @Module({
   imports: [
     PrismaModule,
     CloudinaryModule,
+    FoldersModule,
   ],
   controllers: [TrashController],
   providers: [TrashService],

@@ -79,5 +79,49 @@ export class FoldersController {
     );
   }
 
+  @Patch(':id/trash')
+  trash(
+    @Param('id') folderId: string,
+    @CurrentUser() user: { id: string },
+  ) {
+    return this.foldersService.remove(
+      user.id,
+      folderId,
+    );
+  }
 
+  @Patch(':id/restore')
+  restore(
+    @Param('id') folderId: string,
+    @CurrentUser() user: { id: string },
+  ) {
+    return this.foldersService.restore(
+      user.id,
+      folderId,
+    );
+  }
+
+  @Delete(':id/permanent')
+  permanentlyDelete(
+    @Param('id') folderId: string,
+    @CurrentUser() user: { id: string },
+  ) {
+    return this.foldersService.permanentlyDelete(
+      user.id,
+      folderId,
+    );
+  }
+
+  @Patch(':id/favorite')
+  toggleFavorite(
+    @Param('id') folderId: string,
+    @CurrentUser() user: { id: string },
+    @Body('isFavorite') isFavorite?: boolean,
+  ) {
+    return this.foldersService.toggleFavorite(
+      user.id,
+      folderId,
+      isFavorite,
+    );
+  }
 }

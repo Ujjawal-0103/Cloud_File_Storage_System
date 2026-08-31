@@ -3,6 +3,7 @@
 import React, { useState, useRef } from "react";
 import { UploadCloud, File as FileIcon, Download, Eye, Trash2, Image as ImageIcon, FileText, FileCode, CheckCircle2 } from "lucide-react";
 import FilePreviewModal from "./FilePreviewModal";
+import { useToast } from "@/components/ui/Toast";
 
 interface FileItem {
   id: string;
@@ -13,6 +14,7 @@ interface FileItem {
 }
 
 export default function FileManager() {
+  const { toast } = useToast();
   const [isDragging, setIsDragging] = useState(false);
   const [files, setFiles] = useState<FileItem[]>([
     { id: "1", name: "Project_Proposal_v2.pdf", type: "document", size: "2.4 MB", uploadDate: "Oct 24, 2023" },
@@ -56,6 +58,7 @@ export default function FileManager() {
       uploadDate: "Just now",
     }));
     setFiles((prev) => [...newFiles, ...prev]);
+    toast.success(`${uploadedFiles.length} file(s) uploaded successfully!`);
   };
 
   // Actions
@@ -65,7 +68,9 @@ export default function FileManager() {
   };
 
   const deleteFile = (id: string) => {
+    const file = files.find((f) => f.id === id);
     setFiles(files.filter((f) => f.id !== id));
+    if (file) toast.info(`"${file.name}" removed`);
   };
 
   return (
@@ -145,7 +150,7 @@ export default function FileManager() {
                       <span className="hidden sm:inline">Preview</span>
                     </button>
                     <button
-                      onClick={() => alert(`Downloading ${file.name}`)}
+                      onClick={() => toast.info(`Downloading ${file.name}...`)}
                       className="flex items-center space-x-1 rounded-lg px-3 py-1.5 text-xs font-medium text-slate-300 hover:bg-white/10 hover:text-[#06B6D4] transition-colors"
                     >
                       <Download className="h-4 w-4" />

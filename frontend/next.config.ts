@@ -2,6 +2,8 @@ import type { NextConfig } from "next";
 
 import path from "path";
 
+const backendUrl = (process.env.BACKEND_URL || 'http://localhost:3001').replace(/\/$/, '');
+
 const nextConfig: NextConfig = {
   devIndicators: false,
   turbopack: {
@@ -11,7 +13,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: '/api/backend/:path*',
-        destination: 'http://localhost:3001/api/:path*', // Points to your NestJS backend with global prefix /api
+        destination: `${backendUrl}/:path*`,
       },
     ];
   },

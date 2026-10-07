@@ -126,8 +126,9 @@ export class AuthController {
     @Req() req: Request,
     @Res() res: Response,
   ) {
-    const frontendUrl =
-      process.env.FRONTEND_URL || 'http://localhost:3000';
+    const frontendUrl = (
+      process.env.FRONTEND_URL || 'http://localhost:3000'
+    ).replace(/\/$/, '');
 
     // Parse cookies from headers
     const rawCookieHeader = req.headers.cookie || '';

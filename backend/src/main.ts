@@ -33,17 +33,36 @@ async function bootstrap() {
   );
 
   // 3. CORS Configuration
+  const allowedOrigins: string[] = [
+    'http://localhost:3000',
+    'https://cloud-file-storage-system-five.vercel.app',
+  ];
+  if (process.env.FRONTEND_URL) {
+    const configuredFrontend = process.env.FRONTEND_URL.replace(/\/$/, '');
+    if (!allowedOrigins.includes(configuredFrontend)) {
+      allowedOrigins.push(configuredFrontend);
+    }
+  }
+
   app.enableCors({
-    origin: [
-      'http://localhost:3000',
-      process.env.FRONTEND_URL || 'http://localhost:3000',
-    ],
+    origin: allowedOrigins,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
   });
 
-  // 2. Global Validation Pipe
+  // Route Normalization: seamlessly route both /api/* and direct /* controller paths
+  app.use((req: any, res: any, next: any) => {
+    if (req.url && req.url !== '/' && !req.url.startsWith('/api')) {
+      req.url = '/api' + req.url;
+    }
+    next();
+  });
+
+  // 4. Global API Prefix
+  app.setGlobalPrefix('api');
+
+  // 5. Global Validation Pipe
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -52,11 +71,8 @@ async function bootstrap() {
     }),
   );
 
-  // 3. Global Exception Filter
+  // 6. Global Exception Filter
   app.useGlobalFilters(new GlobalExceptionFilter());
-
-  // 4. Global API Prefix
-  app.setGlobalPrefix('api');
 
   // 5. Swagger Configuration
   const config = new DocumentBuilder()

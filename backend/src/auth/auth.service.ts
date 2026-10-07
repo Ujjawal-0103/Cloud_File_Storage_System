@@ -297,10 +297,11 @@ export class AuthService {
       'http://localhost:3001/api/auth/google/callback';
 
     if (!clientId) {
-      const frontendUrl =
+      const frontendUrl = (
         this.configService?.get<string>('FRONTEND_URL') ||
         process.env.FRONTEND_URL ||
-        'http://localhost:3000';
+        'http://localhost:3000'
+      ).replace(/\/$/, '');
       return `${frontendUrl}/login?error=${encodeURIComponent(
         'Google OAuth is not configured. Please set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in backend .env',
       )}`;

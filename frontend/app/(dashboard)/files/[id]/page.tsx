@@ -10,7 +10,8 @@ async function getFolderPath(currentId: string) {
     const cookieStore = await cookies();
     const token = cookieStore.get("auth_token")?.value || "";
 
-    const response = await fetch(`http://localhost:3000/api/backend/folders`, {
+    const backendUrl = (process.env.BACKEND_URL || 'http://localhost:3001').replace(/\/$/, '');
+    const response = await fetch(`${backendUrl}/folders`, {
       headers: { Authorization: `Bearer ${token}` },
       cache: "no-store",
     });

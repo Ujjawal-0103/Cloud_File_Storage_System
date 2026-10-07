@@ -62,48 +62,32 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   return (
     <ToastContext.Provider value={{ toast, showToast }}>
       {children}
-      {/* Toast Container */}
-      <div className="fixed top-5 right-5 z-[9999] flex flex-col space-y-3 pointer-events-none max-w-sm w-full">
+      {/* Toast Notification Container */}
+      <div className="fixed top-4 right-4 z-[9999] flex flex-col space-y-2.5 pointer-events-none max-w-sm w-full">
         {toasts.map((t) => (
           <div
             key={t.id}
-            className="pointer-events-auto flex items-start gap-3 p-4 rounded-2xl bg-[rgba(22,27,48,0.95)] backdrop-blur-[20px] border shadow-[0_15px_40px_rgba(0,0,0,0.4)] text-white transform transition-all duration-300 animate-in slide-in-from-top-4 fade-in"
-            style={{
-              borderColor:
-                t.type === "success"
-                  ? "rgba(16, 185, 129, 0.4)"
-                  : t.type === "error"
-                  ? "rgba(239, 68, 68, 0.4)"
-                  : t.type === "warning"
-                  ? "rgba(245, 158, 11, 0.4)"
-                  : "rgba(139, 92, 246, 0.4)",
-              boxShadow:
-                t.type === "success"
-                  ? "0 0 20px rgba(16, 185, 129, 0.15)"
-                  : t.type === "error"
-                  ? "0 0 20px rgba(239, 68, 68, 0.15)"
-                  : "0 0 20px rgba(139, 92, 246, 0.15)",
-            }}
+            className="pointer-events-auto flex items-start gap-3 p-3.5 rounded-xl bg-white border border-slate-200 shadow-lg text-slate-800 transform transition-all duration-200 animate-in slide-in-from-top-2 fade-in"
           >
             {/* Icon */}
             <div className="shrink-0 mt-0.5">
               {t.type === "success" && (
-                <div className="h-8 w-8 rounded-xl bg-emerald-500/15 flex items-center justify-center text-emerald-400 border border-emerald-500/30">
+                <div className="h-7 w-7 rounded-lg bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center">
                   <CheckCircle2 className="h-4 w-4" />
                 </div>
               )}
               {t.type === "error" && (
-                <div className="h-8 w-8 rounded-xl bg-red-500/15 flex items-center justify-center text-red-400 border border-red-500/30">
+                <div className="h-7 w-7 rounded-lg bg-red-50 text-red-600 border border-red-100 flex items-center justify-center">
                   <AlertCircle className="h-4 w-4" />
                 </div>
               )}
               {t.type === "warning" && (
-                <div className="h-8 w-8 rounded-xl bg-amber-500/15 flex items-center justify-center text-amber-400 border border-amber-500/30">
+                <div className="h-7 w-7 rounded-lg bg-amber-50 text-amber-600 border border-amber-100 flex items-center justify-center">
                   <AlertTriangle className="h-4 w-4" />
                 </div>
               )}
               {t.type === "info" && (
-                <div className="h-8 w-8 rounded-xl bg-[#8B5CF6]/15 flex items-center justify-center text-[#8B5CF6] border border-[#8B5CF6]/30">
+                <div className="h-7 w-7 rounded-lg bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center">
                   <Info className="h-4 w-4" />
                 </div>
               )}
@@ -111,14 +95,15 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 
             {/* Content */}
             <div className="flex-1 min-w-0 pr-1">
-              {t.title && <h4 className="text-xs font-semibold text-white tracking-wide">{t.title}</h4>}
-              <p className="text-xs text-[#B7C1D8] mt-0.5 leading-relaxed break-words">{t.message}</p>
+              {t.title && <h4 className="text-xs font-semibold text-slate-900">{t.title}</h4>}
+              <p className="text-xs text-slate-600 mt-0.5 leading-relaxed break-words">{t.message}</p>
             </div>
 
             {/* Close Button */}
             <button
               onClick={() => removeToast(t.id)}
-              className="shrink-0 p-1 text-[#7D879C] hover:text-white rounded-lg hover:bg-white/10 transition-colors"
+              className="shrink-0 p-1 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100 transition-colors"
+              aria-label="Dismiss toast"
             >
               <X className="h-3.5 w-3.5" />
             </button>

@@ -86,26 +86,27 @@ export class FilesController {
     example: 20,
     description: 'Number of files per page',
   })
-
+  @ApiQuery({
+    name: 'pageSize',
+    required: false,
+    type: Number,
+    example: 20,
+    description: 'Alias for limit',
+  })
   async getFiles(
     @Query('folderId') folderId?: string,
-
     @Query('mimeType') mimeType?: string,
-
     @Query('sortBy')
     sortBy:
       | 'name'
       | 'size'
       | 'createdAt'
       | 'updatedAt' = 'createdAt',
-
     @Query('order')
     order: 'asc' | 'desc' = 'desc',
-
     @Query('page') page = '1',
-
     @Query('limit') limit = '20',
-
+    @Query('pageSize') pageSize?: string,
     @CurrentUser()
     user?: {
       id: string;
@@ -113,7 +114,7 @@ export class FilesController {
     },
   ) {
     const pageNumber = Number(page);
-    const limitNumber = Number(limit);
+    const limitNumber = Number(pageSize || limit);
 
     // Validate page
     if (
@@ -217,6 +218,23 @@ async getStorageUsage(
     return this.filesService.getStorageUsage(
       user.id,
     );
+  }
+
+  // =========================
+  // DOWNLOAD FILE
+  // =========================
+
+  @Get(':id/download')
+  @UseGuards(JwtAuthGuard)
+  async downloadFile(
+    @Param('id') id: string,
+    @CurrentUser()
+    user: {
+      id: string;
+      email: string;
+    },
+  ) {
+    return this.filesService.downloadFile(id, user.id);
   }
 
   // =========================
@@ -356,6 +374,78 @@ async getStorageUsage(
       id,
       user.id,
       isFavorite,
+    );
+  }
+
+  // =========================
+  // RENAME FILE
+  // =========================
+
+  @Patch(':id/rename')
+  @UseGuards(JwtAuthGuard)
+  async renameFile(
+    @Param('id') id: string,
+
+    @CurrentUser()
+    user: {
+      id: string;
+      email: string;
+    },
+
+    @Body('name') name: string,
+  ) {
+    return this.filesService.renameFile(
+      id,
+      user.id,
+      name,
+    );
+  }
+
+  // =========================
+  // MOVE FILE
+  // =========================
+
+  @Patch(':id/move')
+  @UseGuards(JwtAuthGuard)
+  async moveFile(
+    @Param('id') id: string,
+
+    @CurrentUser()
+    user: {
+      id: string;
+      email: string;
+    },
+
+    @Body('folderId') folderId?: string | null,
+  ) {
+    return this.filesService.moveFile(
+      id,
+      user.id,
+      folderId ?? null,
+    );
+  }
+
+  // =========================
+  // COPY FILE
+  // =========================
+
+  @Post(':id/copy')
+  @UseGuards(JwtAuthGuard)
+  async copyFile(
+    @Param('id') id: string,
+
+    @CurrentUser()
+    user: {
+      id: string;
+      email: string;
+    },
+
+    @Body('folderId') folderId?: string | null,
+  ) {
+    return this.filesService.copyFile(
+      id,
+      user.id,
+      folderId,
     );
   }
 }

@@ -10,9 +10,15 @@ describe('PrismaService', () => {
     }).compile();
 
     service = module.get<PrismaService>(PrismaService);
+    jest.spyOn(service, '$connect').mockResolvedValue(undefined);
   });
 
   it('should be defined', () => {
     expect(service).toBeDefined();
+  });
+
+  it('should connect on module init', async () => {
+    await service.onModuleInit();
+    expect(service.$connect).toHaveBeenCalled();
   });
 });

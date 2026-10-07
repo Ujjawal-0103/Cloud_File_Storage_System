@@ -7,19 +7,25 @@ datasource db {
 }
 
 model User {
-  id         String        @id @default(uuid())
-  name       String
-  email      String        @unique
-  password   String
-  avatar     String?
-  createdAt  DateTime      @default(now())
-  updatedAt  DateTime      @updatedAt
-  activities ActivityLog[]
-  files      File[]
-  folders    Folder[]
-  sharedBy   SharedItem[]  @relation("SharedBy")
-  sharedWith SharedItem[]  @relation("SharedWith")
-  favorites  Favorite[]
+  id                   String         @id @default(uuid())
+  name                 String
+  email                String         @unique
+  password             String?
+  avatar               String?
+  provider             String?
+  refreshToken         String?
+  resetPasswordToken   String?
+  resetPasswordExpires DateTime?
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+  activities           ActivityLog[]
+  files                File[]
+  folders              Folder[]
+  sharedBy             SharedItem[]   @relation("SharedBy")
+  sharedWith           SharedItem[]   @relation("SharedWith")
+  favorites            Favorite[]
+  accounts             Account[]
+  notifications        Notification[]
 }
 
 model Folder {
@@ -33,12 +39,16 @@ model Folder {
   deletedAt    DateTime?
   activityLogs ActivityLog[]
   files        File[]
+  sharedItems  SharedItem[]
   owner        User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   parent       Folder?       @relation("FolderHierarchy", fields: [parentId], references: [id])
   children     Folder[]      @relation("FolderHierarchy")
 
   @@index([ownerId])
   @@index([deletedAt])
+  @@index([ownerId, deletedAt])
+  @@index([ownerId, parentId, deletedAt])
+  @@index([ownerId, isFavorite, deletedAt])
 }
 
 model File {
@@ -63,6 +73,8 @@ model File {
   @@index([ownerId])
   @@index([folderId])
   @@index([deletedAt])
+  @@index([ownerId, deletedAt, createdAt])
+  @@index([ownerId, folderId, deletedAt])
 }
 
 model Favorite {
@@ -81,18 +93,27 @@ model Favorite {
 
 model SharedItem {
   id           String     @id @default(uuid())
-  fileId       String
+  fileId       String?
+  folderId     String?
   sharedById   String
-  sharedWithId String
-  permission   Permission
+  sharedWithId String?
+  permission   Permission @default(VIEW)
+  isPublic     Boolean    @default(false)
+  publicToken  String?    @unique
+  expiresAt    DateTime?
   createdAt    DateTime   @default(now())
-  file         File       @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  file         File?      @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  folder       Folder?    @relation(fields: [folderId], references: [id], onDelete: Cascade)
   sharedBy     User       @relation("SharedBy", fields: [sharedById], references: [id], onDelete: Cascade)
-  sharedWith   User       @relation("SharedWith", fields: [sharedWithId], references: [id], onDelete: Cascade)
+  sharedWith   User?      @relation("SharedWith", fields: [sharedWithId], references: [id], onDelete: Cascade)
 
   @@index([fileId])
+  @@index([folderId])
   @@index([sharedById])
   @@index([sharedWithId])
+  @@index([publicToken])
+  @@index([fileId, sharedWithId])
+  @@index([folderId, sharedWithId])
 }
 
 model ActivityLog {
@@ -109,6 +130,8 @@ model ActivityLog {
   @@index([userId])
   @@index([fileId])
   @@index([folderId])
+  @@index([userId, createdAt])
+  @@index([userId, action, createdAt])
 }
 
 enum Permission {
@@ -126,4 +149,45 @@ enum ActivityType {
   CREATE_FOLDER
   RENAME_FOLDER
   MOVE_FILE
+  RENAME_FILE
+  COPY_FILE
+}
+
+model Account {
+  id         String   @id @default(uuid())
+  userId     String
+  provider   String
+  providerId String
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerId])
+  @@index([userId])
+}
+
+model Notification {
+  id                String           @id @default(uuid())
+  userId            String
+  type              NotificationType
+  title             String
+  message           String
+  read              Boolean          @default(false)
+  relatedEntityId   String?
+  relatedEntityType String?
+  createdAt         DateTime         @default(now())
+  user              User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, read])
+  @@index([userId, createdAt])
+}
+
+enum NotificationType {
+  SHARE_RECEIVED
+  SHARE_PERMISSION_CHANGED
+  SHARE_REVOKED
+  FILE_UPLOADED
+  FILE_DELETED
+  FOLDER_CREATED
+  SYSTEM
 }

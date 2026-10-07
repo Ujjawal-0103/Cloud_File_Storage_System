@@ -1,7 +1,8 @@
 import React from "react";
 import FolderExplorer from "@/components/explorer/FolderExplorer";
 import { cookies } from "next/headers";
-import Link from "next/link"; // Allows clickable breadcrumbs
+import Link from "next/link";
+import { ChevronRight, Home } from "lucide-react";
 
 // Helper function to trace the folder path
 async function getFolderPath(currentId: string) {
@@ -9,29 +10,24 @@ async function getFolderPath(currentId: string) {
     const cookieStore = await cookies();
     const token = cookieStore.get("auth_token")?.value || "";
 
-    // Fetch ALL folders to reconstruct the path on the frontend
     const response = await fetch(`http://localhost:3000/api/backend/folders`, {
-      headers: { "Authorization": `Bearer ${token}` },
-      cache: "no-store"
+      headers: { Authorization: `Bearer ${token}` },
+      cache: "no-store",
     });
 
     if (response.ok) {
       const data = await response.json();
       const allFolders = Array.isArray(data) ? data : data.folders || [];
-      
+
       const path = [];
       let current = allFolders.find((f: any) => f.id === currentId);
-      
-      // Trace backwards from the current folder up to the root
+
       while (current) {
-        // Add the current folder to the front of the array
         path.unshift({ id: current.id, name: current.name });
-        
-        // Find its parent for the next loop iteration
         const parentId = current.parentId || current.parent_id;
         current = allFolders.find((f: any) => f.id === parentId);
       }
-      
+
       return path;
     }
   } catch (error) {
@@ -40,40 +36,46 @@ async function getFolderPath(currentId: string) {
   return [];
 }
 
-export default async function FolderDetailPage({ 
-  params 
-}: { 
-  params: Promise<{ id: string }> 
+export default async function FolderDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
 }) {
   const resolvedParams = await params;
   const folderId = resolvedParams.id;
-  
-  // Get the full traced path
+
   const folderPath = await getFolderPath(folderId);
 
   return (
-    <div className="w-full space-y-6">
-      {/* Full Dynamic Breadcrumb Path */}
-      <div className="flex items-center space-x-2 text-xs text-[#B7C1D8] px-2">
-        <Link href="/files" className="hover:text-[#8B5CF6] transition-colors">
-          Root
+    <div className="w-full space-y-4">
+      {/* Clean Dynamic Breadcrumbs */}
+      <nav aria-label="Breadcrumb" className="flex items-center space-x-1.5 text-xs text-slate-500 py-1">
+        <Link
+          href="/files"
+          className="flex items-center space-x-1 hover:text-blue-600 transition-colors font-medium text-slate-600"
+        >
+          <Home className="h-3.5 w-3.5" />
+          <span>My Files</span>
         </Link>
-        
+
         {folderPath.map((folder, index) => (
           <React.Fragment key={folder.id}>
-            <span>/</span>
+            <ChevronRight className="h-3.5 w-3.5 text-slate-400 shrink-0" />
             {index === folderPath.length - 1 ? (
-              // The current active folder (Last item) - highlight it
-              <span className="text-white font-semibold tracking-wide">{folder.name}</span>
+              <span className="text-slate-900 font-semibold truncate max-w-[200px]">
+                {folder.name}
+              </span>
             ) : (
-              // The parent folders - make them clickable links
-              <Link href={`/files/${folder.id}`} className="hover:text-[#8B5CF6] transition-colors">
+              <Link
+                href={`/files/${folder.id}`}
+                className="hover:text-blue-600 transition-colors truncate max-w-[150px]"
+              >
                 {folder.name}
               </Link>
             )}
           </React.Fragment>
         ))}
-      </div>
+      </nav>
 
       <FolderExplorer key={folderId} currentFolderId={folderId} />
     </div>

@@ -1,10 +1,10 @@
-import FileManager from "@/components/file-manager/FileManager";
+import { redirect } from "next/navigation";
 
 export const metadata = {
-  title: "File Manager | CloudRage",
-  description: "Upload, preview, and download your files.",
+  title: "Files | CloudRage",
+  description: "Manage your cloud files and directories.",
 };
 
 export default function FileManagerPage() {
-  return <FileManager />;
+  redirect("/files");
 }

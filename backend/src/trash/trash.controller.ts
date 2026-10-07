@@ -4,6 +4,7 @@ import {
   Get,
   Param,
   Patch,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 
@@ -33,7 +34,15 @@ export class TrashController {
       id: string;
       email: string;
     },
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('pageSize') pageSize?: string,
   ) {
+    const pageNum = page ? Number(page) : undefined;
+    const limitNum = pageSize || limit ? Number(pageSize || limit) : undefined;
+    if (pageNum !== undefined || limitNum !== undefined) {
+      return this.trashService.getTrash(user.id, pageNum, limitNum);
+    }
     return this.trashService.getTrash(user.id);
   }
 

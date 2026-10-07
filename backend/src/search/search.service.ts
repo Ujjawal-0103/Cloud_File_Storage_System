@@ -5,7 +5,7 @@ import { PrismaService } from '../prisma/prisma.service';
 export class SearchService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async search(userId: string, query: string) {
+  async search(userId: string, query: string, page?: number, limit?: number) {
     const [files, allUserFolders, allUserFiles] = await Promise.all([
       this.prisma.file.findMany({
         where: {
@@ -125,9 +125,32 @@ export class SearchService {
       };
     });
 
+    const total = formattedFiles.length + formattedFolders.length;
+
+    if (page && limit) {
+      const pageNum = Math.max(1, page);
+      const limitNum = Math.min(100, Math.max(1, limit));
+      const skip = (pageNum - 1) * limitNum;
+
+      return {
+        files: formattedFiles.slice(skip, skip + limitNum),
+        folders: formattedFolders.slice(skip, skip + limitNum),
+        total,
+        totalFiles: formattedFiles.length,
+        totalFolders: formattedFolders.length,
+        page: pageNum,
+        limit: limitNum,
+        pageSize: limitNum,
+        totalPages: Math.ceil(total / limitNum) || 1,
+      };
+    }
+
     return {
       files: formattedFiles,
       folders: formattedFolders,
+      total,
+      totalFiles: formattedFiles.length,
+      totalFolders: formattedFolders.length,
     };
   }
 }

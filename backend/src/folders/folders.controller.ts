@@ -7,6 +7,7 @@ import {
   Param,
   Patch,
   Delete,
+  Query,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
@@ -35,7 +36,17 @@ export class FoldersController {
   }
 
   @Get()
-  findAll(@CurrentUser() user: { id: string }) {
+  findAll(
+    @CurrentUser() user: { id: string },
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('pageSize') pageSize?: string,
+  ) {
+    const pageNum = page ? Number(page) : undefined;
+    const limitNum = pageSize || limit ? Number(pageSize || limit) : undefined;
+    if (pageNum !== undefined || limitNum !== undefined) {
+      return this.foldersService.findAll(user.id, pageNum, limitNum);
+    }
     return this.foldersService.findAll(user.id);
   }
 

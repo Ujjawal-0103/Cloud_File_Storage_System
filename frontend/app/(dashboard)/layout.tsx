@@ -1,5 +1,6 @@
 import Sidebar from "@/components/Sidebar";
 import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 
 export default function DashboardLayout({
   children,
@@ -7,29 +8,22 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex min-h-screen bg-[#12162A]">
-      {/* Sidebar */}
+    <div className="flex h-screen overflow-hidden bg-background text-foreground antialiased">
+      {/* Fixed Sidebar */}
       <Sidebar />
 
-      {/* Main Content */}
-      <div className="flex flex-1 flex-col overflow-hidden">
+      {/* Main Content Area */}
+      <div className="flex flex-1 flex-col min-w-0 h-full overflow-hidden">
         {/* Navbar */}
         <Navbar />
 
         {/* Dashboard Content */}
-        <main
-          className="flex-1 overflow-y-auto p-8"
-          style={{
-            background: `
-              radial-gradient(circle at 15% 20%, rgba(139,92,246,.18), transparent 30%),
-              radial-gradient(circle at 85% 80%, rgba(6,182,212,.15), transparent 35%),
-              radial-gradient(circle at 60% 10%, rgba(99,102,241,.08), transparent 25%),
-              #12162A
-            `,
-          }}
-        >
-          <div className="mx-auto max-w-screen-2xl">
+        <main className="flex-1 overflow-y-auto px-4 py-6 sm:px-6 lg:px-8 flex flex-col justify-between">
+          <div className="mx-auto max-w-7xl w-full flex-1">
             {children}
+          </div>
+          <div className="pt-8">
+            <Footer />
           </div>
         </main>
       </div>

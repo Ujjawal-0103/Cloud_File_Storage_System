@@ -16,7 +16,7 @@ export class TrashService {
   ) {}
 
   // Get all top-level trashed files and folders with recursive stats
-  async getTrash(userId: string) {
+  async getTrash(userId: string, page?: number, limit?: number) {
     const [allFolders, allFiles] = await Promise.all([
       this.prisma.folder.findMany({
         where: {
@@ -113,9 +113,32 @@ export class TrashService {
       (file) => file.deletedAt !== null && (!file.folderId || !trashedFolderIdSet.has(file.folderId))
     );
 
+    const total = topLevelTrashedFiles.length + formattedFolders.length;
+
+    if (page && limit) {
+      const pageNum = Math.max(1, page);
+      const limitNum = Math.min(100, Math.max(1, limit));
+      const skip = (pageNum - 1) * limitNum;
+
+      return {
+        files: topLevelTrashedFiles.slice(skip, skip + limitNum),
+        folders: formattedFolders.slice(skip, skip + limitNum),
+        total,
+        totalFiles: topLevelTrashedFiles.length,
+        totalFolders: formattedFolders.length,
+        page: pageNum,
+        limit: limitNum,
+        pageSize: limitNum,
+        totalPages: Math.ceil(total / limitNum) || 1,
+      };
+    }
+
     return {
       files: topLevelTrashedFiles,
       folders: formattedFolders,
+      total,
+      totalFiles: topLevelTrashedFiles.length,
+      totalFolders: formattedFolders.length,
     };
   }
 

@@ -11,15 +11,50 @@ import {
   Star,
   Trash2,
   Settings,
+  Cloud,
+  HardDrive,
+  Clock,
 } from "lucide-react";
+
+const getAuthToken = () => {
+  if (typeof document === "undefined") return "";
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; auth_token=`);
+  if (parts.length === 2) return parts.pop()?.split(";").shift() || "";
+  return "";
+};
+
+const formatBytes = (bytes: number) => {
+  if (bytes === 0) return "0 KB";
+  if (bytes >= 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+  if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  return `${(bytes / 1024).toFixed(1)} KB`;
+};
 
 const Sidebar = () => {
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
+  const [storageUsedBytes, setStorageUsedBytes] = useState(0);
 
   useEffect(() => {
     setMounted(true);
-  }, []);
+    const fetchStorage = async () => {
+      try {
+        const token = getAuthToken();
+        if (!token) return;
+        const res = await fetch("/api/backend/files/storage", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setStorageUsedBytes(data.usedBytes || 0);
+        }
+      } catch {
+        // Silently keep default
+      }
+    };
+    fetchStorage();
+  }, [pathname]);
 
   const navItems = [
     {
@@ -31,6 +66,11 @@ const Sidebar = () => {
       name: "My Files",
       href: "/files",
       icon: Folder,
+    },
+    {
+      name: "Recent",
+      href: "/recent",
+      icon: Clock,
     },
     {
       name: "Shared",
@@ -49,174 +89,120 @@ const Sidebar = () => {
     },
   ];
 
+  const totalCapacity = 15 * 1024 * 1024 * 1024; // 15 GB
+  const usedPercent = Math.min(100, Math.max(storageUsedBytes > 0 ? 1 : 0, (storageUsedBytes / totalCapacity) * 100));
+
   return (
-    <aside
-      className="
-        hidden
-        md:flex
-        w-72
-        flex-col
-        justify-between
-
-        bg-[rgba(22,27,48,.72)]
-        backdrop-blur-[20px]
-
-        border-r
-        border-white/10
-
-        shadow-[0_15px_40px_rgba(0,0,0,.28)]
-      "
-    >
-      {/* Logo */}
-
-      <div>
-        <div className="flex justify-center items-center py-8">
-
-          <img
-            src="/logo.png"
-            alt="CloudRage"
-            width={180}
-            height={60}
-            className="object-contain select-none"
-          />
-
+    <aside className="hidden md:flex w-64 flex-col justify-between bg-sidebar text-sidebar-foreground border-r border-sidebar-border select-none shrink-0 h-screen sticky top-0 overflow-hidden">
+      <div className="flex flex-col flex-1 min-h-0">
+        {/* Brand / Logo */}
+        <div className="h-16 px-5 flex items-center border-b border-sidebar-border shrink-0">
+          <Link href="/dashboard" className="flex items-center space-x-3 group">
+            <Image
+              src="/logo.png"
+              alt="CloudRage"
+              width={46}
+              height={46}
+              className="h-11 w-11 object-contain shrink-0 transition-transform duration-200 group-hover:scale-105"
+              priority
+            />
+            <div className="flex flex-col">
+              <span className="text-base font-bold tracking-tight text-foreground group-hover:text-primary transition-colors leading-none">
+                CloudRage
+              </span>
+              <span className="text-[10px] text-muted-foreground font-medium tracking-wide mt-1">
+                Cloud Storage
+              </span>
+            </div>
+          </Link>
         </div>
 
         {/* Navigation */}
+        <div className="px-3 py-4 flex-1 overflow-y-auto">
+          <p className="px-3 pb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Navigation
+          </p>
+          <nav className="space-y-1">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              const active =
+                mounted &&
+                (pathname === item.href ||
+                  (item.href !== "/dashboard" && item.href !== "/" && pathname.startsWith(`${item.href}/`)));
 
-        <nav className="px-4 space-y-2">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const active =
-              mounted &&
-              (pathname === item.href ||
-                (item.href !== "/dashboard" && item.href !== "/" && pathname.startsWith(`${item.href}/`)));
-
-            return (
-              <Link
-                key={item.name}
-                href={item.href}
-                className={`
-                  flex
-                  items-center
-                  gap-4
-                  px-5
-                  py-3.5
-                  rounded-2xl
-                  transition-all
-                  duration-300
-                  ${
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
                     active
-                      ? "bg-white/10 border border-[#8B5CF6]/40 text-white shadow-[0_0_15px_rgba(139,92,246,0.15)]"
-                      : "text-[#B7C1D8] hover:bg-white/5 hover:text-white"
-                  }
-                `}
-              >
-                <Icon
-                  size={21}
-                  className={
-                    active
-                      ? "text-[#8B5CF6]"
-                      : "text-[#7D879C]"
-                  }
-                />
-
-                <span className="font-medium tracking-wide">
-                  {item.name}
-                </span>
-              </Link>
-            );
-          })}
-        </nav>
-
+                      ? "bg-blue-50 text-blue-700 font-semibold dark:bg-blue-500/10 dark:text-blue-400"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/70"
+                  }`}
+                >
+                  <Icon
+                    size={18}
+                    className={
+                      active
+                        ? "text-blue-600 dark:text-blue-400 shrink-0"
+                        : "text-muted-foreground shrink-0"
+                    }
+                  />
+                  <span>{item.name}</span>
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
       </div>
 
-      {/* Bottom */}
-      <div className="border-t border-white/10 p-4">
+      {/* Bottom Area: Settings & Storage */}
+      <div className="p-3 border-t border-sidebar-border space-y-3 shrink-0 bg-sidebar">
+        {/* Settings link */}
         <Link
           href="/settings"
-          className={`
-            flex
-            items-center
-            gap-4
-            px-5
-            py-3.5
-            rounded-2xl
-            transition-all
-            duration-300
-            ${
-              mounted && pathname === "/settings"
-                ? "bg-white/10 border border-[#8B5CF6]/40 text-white shadow-[0_0_15px_rgba(139,92,246,0.15)]"
-                : "text-[#B7C1D8] hover:bg-white/5 hover:text-white"
-            }
-          `}
+          className={`flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-colors ${
+            mounted && pathname === "/settings"
+              ? "bg-blue-50 text-blue-700 font-semibold dark:bg-blue-500/10 dark:text-blue-400"
+              : "text-muted-foreground hover:text-foreground hover:bg-muted/70"
+          }`}
         >
           <Settings
-            size={21}
+            size={18}
             className={
               mounted && pathname === "/settings"
-                ? "text-[#8B5CF6]"
-                : "text-[#7D879C]"
+                ? "text-blue-600 dark:text-blue-400 shrink-0"
+                : "text-muted-foreground shrink-0"
             }
           />
-
-          <span className="font-medium">
-            Settings
-          </span>
+          <span>Settings</span>
         </Link>
 
-        {/* Storage Card */}
-
-        <div
-          className="
-            mt-8
-
-            rounded-3xl
-
-            bg-white/5
-
-            border
-
-            border-white/10
-
-            p-5
-          "
-        >
-
-          <p className="text-sm text-[#B7C1D8]">
-            Storage
-          </p>
-
-          <h2 className="text-3xl font-bold text-white mt-2">
-            0 GB
-          </h2>
-
-          <p className="text-xs text-[#7D879C] mt-1">
-            of 15 GB available
-          </p>
-
-          <div className="mt-5 h-2 bg-white/10 rounded-full overflow-hidden">
-
-            <div
-              className="
-                h-full
-                w-[5%]
-
-                rounded-full
-
-                bg-gradient-to-r
-                from-[#8B5CF6]
-                via-[#6366F1]
-                to-[#06B6D4]
-              "
-            />
-
+        {/* Storage Usage Widget */}
+        <div className="rounded-xl bg-slate-50 dark:bg-white/[0.03] border border-sidebar-border p-3.5 space-y-2.5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-1.5 text-xs font-semibold text-foreground">
+              <HardDrive className="h-3.5 w-3.5 text-muted-foreground" />
+              <span>Storage</span>
+            </div>
+            <span className="text-[11px] font-medium text-muted-foreground">
+              {usedPercent < 0.1 ? "<0.1%" : `${usedPercent.toFixed(1)}%`}
+            </span>
           </div>
 
+          <div className="h-1.5 w-full bg-slate-200 dark:bg-white/10 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-blue-600 rounded-full transition-all duration-300"
+              style={{ width: `${Math.max(1, usedPercent)}%` }}
+            />
+          </div>
+
+          <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+            <span>{formatBytes(storageUsedBytes)}</span>
+            <span>of 15.0 GB</span>
+          </div>
         </div>
-
       </div>
-
     </aside>
   );
 };

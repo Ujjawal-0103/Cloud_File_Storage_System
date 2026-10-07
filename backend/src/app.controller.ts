@@ -1,16 +1,12 @@
-import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { Controller, Get } from '@nestjs/common';
+import { ApiTags, ApiOperation } from '@nestjs/swagger';
 
-import { PrismaModule } from './prisma/prisma.module';
-import { AuthModule } from './auth/auth.module';
-
-@Module({
-  imports: [
-    ConfigModule.forRoot({
-      isGlobal: true,
-    }),
-    PrismaModule,
-    AuthModule,
-  ],
-})
-export class AppModule {}
+@ApiTags('health')
+@Controller('health')
+export class AppController {
+  @Get()
+  @ApiOperation({ summary: 'Health check endpoint' })
+  getHealth() {
+    return { status: 'ok', timestamp: new Date().toISOString() };
+  }
+}

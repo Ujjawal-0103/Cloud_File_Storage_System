@@ -2,10 +2,13 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  Optional,
 } from '@nestjs/common';
+import { ActivityType } from '@prisma/client';
 
 import { PrismaService } from '../prisma/prisma.service';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
+import { CacheService } from '../common/cache/cache.service';
 import { CreateFolderDto } from './dto/create-folder.dto';
 import { UpdateFolderDto } from './dto/update-folder.dto';
 
@@ -14,6 +17,7 @@ export class FoldersService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly cloudinaryService: CloudinaryService,
+    @Optional() private readonly cacheService?: CacheService,
   ) {}
 
   async create(
@@ -36,13 +40,31 @@ export class FoldersService {
       }
     }
 
-    return this.prisma.folder.create({
+    const folder = await this.prisma.folder.create({
       data: {
         name: createFolderDto.name,
         ownerId: userId,
         parentId: createFolderDto.parentId,
       },
     });
+
+    if (this.prisma.activityLog?.create) {
+      try {
+        await this.prisma.activityLog.create({
+          data: {
+            action: ActivityType.CREATE_FOLDER,
+            userId,
+            folderId: folder.id,
+          },
+        });
+      } catch (e) {
+        console.error('Error logging create folder activity:', e);
+      }
+    }
+
+    this.invalidateCache(userId);
+
+    return folder;
   }
 
   private computeFolderStats(folders: any[], files: any[]) {
@@ -109,7 +131,7 @@ export class FoldersService {
     });
   }
 
-  async findAll(userId: string) {
+  async findAll(userId: string, page?: number, limit?: number) {
     const [folders, files] = await Promise.all([
       this.prisma.folder.findMany({
         where: {
@@ -132,7 +154,27 @@ export class FoldersService {
       }),
     ]);
 
-    return this.computeFolderStats(folders, files);
+    const computed = this.computeFolderStats(folders, files);
+
+    if (page && limit) {
+      const pageNum = Math.max(1, page);
+      const limitNum = Math.min(100, Math.max(1, limit));
+      const skip = (pageNum - 1) * limitNum;
+      const paginated = computed.slice(skip, skip + limitNum);
+
+      return {
+        total: computed.length,
+        page: pageNum,
+        limit: limitNum,
+        pageSize: limitNum,
+        totalPages: Math.ceil(computed.length / limitNum),
+        folders: paginated,
+        items: paginated,
+        data: paginated,
+      };
+    }
+
+    return computed;
   }
 
   async findOne(userId: string, folderId: string) {
@@ -232,12 +274,34 @@ export class FoldersService {
       }
     }
 
-    return this.prisma.folder.update({
+    const updated = await this.prisma.folder.update({
       where: {
         id: folderId,
       },
       data: updateFolderDto,
     });
+
+    if (
+      updateFolderDto.name &&
+      updateFolderDto.name !== folder.name &&
+      this.prisma.activityLog?.create
+    ) {
+      try {
+        await this.prisma.activityLog.create({
+          data: {
+            action: ActivityType.RENAME_FOLDER,
+            userId,
+            folderId: folder.id,
+          },
+        });
+      } catch (e) {
+        console.error('Error logging rename folder activity:', e);
+      }
+    }
+
+    this.invalidateCache(userId);
+
+    return updated;
   }
 
   // Recursive helper to gather all descendant folder IDs
@@ -309,6 +373,22 @@ export class FoldersService {
       },
     });
 
+    if (this.prisma.activityLog?.create) {
+      try {
+        await this.prisma.activityLog.create({
+          data: {
+            action: ActivityType.DELETE,
+            userId,
+            folderId,
+          },
+        });
+      } catch (e) {
+        console.error('Error logging delete folder activity:', e);
+      }
+    }
+
+    this.invalidateCache(userId);
+
     return {
       message: 'Folder and all its subfolders and files moved to trash',
       id: folderId,
@@ -375,6 +455,8 @@ export class FoldersService {
         data: { parentId: null },
       });
     }
+
+    this.invalidateCache(userId);
 
     return {
       message: 'Folder and its contents restored successfully',
@@ -447,11 +529,15 @@ export class FoldersService {
       });
     }
 
-    return this.prisma.folder.delete({
+    const result = await this.prisma.folder.delete({
       where: {
         id: folderId,
       },
     });
+
+    this.invalidateCache(userId);
+
+    return result;
   }
 
   async getTree(userId: string) {
@@ -508,7 +594,7 @@ export class FoldersService {
 
     const nextState = isFavorite !== undefined ? isFavorite : !folder.isFavorite;
 
-    return this.prisma.folder.update({
+    const result = await this.prisma.folder.update({
       where: {
         id: folderId,
       },
@@ -516,6 +602,16 @@ export class FoldersService {
         isFavorite: nextState,
       },
     });
+
+    this.invalidateCache(userId);
+
+    return result;
+  }
+
+  private invalidateCache(userId: string) {
+    if (this.cacheService) {
+      this.cacheService.delUser(userId);
+    }
   }
 }
 

@@ -1,7 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-@custom-variant dark (&:is(.dark *));
+@custom-variant dark (&:where(.dark, .dark *));
 
 @theme inline {
   --color-background: var(--background);
@@ -17,11 +17,6 @@
   --color-sidebar-primary: var(--sidebar-primary);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);
@@ -38,92 +33,340 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.25rem;
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  /* Clean Light Theme Foundation */
+  --background: #F8FAFC; /* slate-50 */
+  --foreground: #0F172A; /* slate-900 */
+  --card: #FFFFFF;
+  --card-foreground: #0F172A;
+  --popover: #FFFFFF;
+  --popover-foreground: #0F172A;
+  --primary: #1E3A8A; /* deep navy / indigo */
+  --primary-foreground: #FFFFFF;
+  --secondary: #F1F5F9; /* slate-100 */
+  --secondary-foreground: #1E293B; /* slate-800 */
+  --muted: #F1F5F9;
+  --muted-foreground: #64748B; /* slate-500 */
+  --accent: #F8FAFC;
+  --accent-foreground: #0F172A;
+  --destructive: #DC2626; /* red-600 */
+  --border: #E2E8F0; /* slate-200 */
+  --input: #E2E8F0;
+  --ring: #2563EB; /* blue-600 */
+  --radius: 0.75rem;
+
+  --sidebar: #FFFFFF;
+  --sidebar-foreground: #334155; /* slate-700 */
+  --sidebar-primary: #1E3A8A;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #EFF6FF; /* blue-50 */
+  --sidebar-accent-foreground: #1D4ED8; /* blue-700 */
+  --sidebar-border: #E2E8F0;
+  --sidebar-ring: #2563EB;
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  /* =========================================================================
+     LEVEL 1 — APP BACKGROUND: Deep Obsidian / Midnight Blue-Black
+     (NOT medium gray, NOT pitch black #000000, feels like Linear / Vercel dark)
+     ========================================================================= */
+  --background: #040711;
+  --foreground: #F8FAFC;
+
+  /* =========================================================================
+     LEVEL 2 — SIDEBAR: Differentiated deep surface, anchored and structured
+     ========================================================================= */
+  --sidebar: #060914;
+  --sidebar-foreground: #94A3B8;
+  --sidebar-primary: #3B82F6;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: rgba(59, 130, 246, 0.12);
+  --sidebar-accent-foreground: #60A5FA;
+  --sidebar-border: rgba(255, 255, 255, 0.05);
+  --sidebar-ring: #3B82F6;
+
+  /* =========================================================================
+     LEVEL 4 — CARDS: Rich elevated midnight surface, NOT a flat gray box
+     ========================================================================= */
+  --card: #0A0F1D;
+  --card-foreground: #F8FAFC;
+
+  /* =========================================================================
+     LEVEL 6 — POPOVERS / MODALS: Elevated smoothly above cards
+     ========================================================================= */
+  --popover: #0E1528;
+  --popover-foreground: #F8FAFC;
+
+  /* Primary Accent: Controlled CloudRage Blue */
+  --primary: #2563EB;
+  --primary-foreground: #FFFFFF;
+
+  /* Level 5 & Insets */
+  --secondary: #0E1528;
+  --secondary-foreground: #F8FAFC;
+  --muted: #080C18;
+  --muted-foreground: #94A3B8;
+  --accent: rgba(255, 255, 255, 0.04);
+  --accent-foreground: #F8FAFC;
+  --destructive: #EF4444;
+
+  /* Subtle Razor-thin hairline border (NOT a thick visible gray border) */
+  --border: rgba(255, 255, 255, 0.07);
+  --input: #060913;
+  --ring: #3B82F6;
 }
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border outline-ring/40;
   }
   body {
-    @apply bg-background text-foreground;
+    background-color: var(--background);
+    color: var(--foreground);
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
-  html {
-    @apply font-sans;
-  }
+}
+
+/* =========================================================================
+   DEEP NEUTRAL DARK MODE OVERRIDES (NO EXCESSIVE GRAY)
+   ========================================================================= */
+
+/* Cards & Containers: Rich Deep Midnight Surface */
+.dark .bg-white {
+  background-color: var(--card) !important;
+}
+
+/* Page, Sub-surfaces, Table Headers & Inset Wells: Deep Midnight */
+.dark .bg-slate-50,
+.dark .bg-gray-50,
+.dark .bg-slate-50\/50,
+.dark .bg-slate-50\/60,
+.dark .bg-slate-50\/80 {
+  background-color: #060914 !important;
+}
+
+/* Recessed Blocks, Pills & Badges Base */
+.dark .bg-slate-100,
+.dark .bg-gray-100 {
+  background-color: #080D1A !important;
+}
+
+/* Progress Bar & Inset Tracks */
+.dark .bg-slate-200,
+.dark .bg-gray-200,
+.dark .dark\:bg-slate-800 {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Borders: Low-contrast Hairline Transitions (NO Muddy Gray Lines) */
+.dark .border-slate-100,
+.dark .border-slate-200,
+.dark .border-slate-300,
+.dark .border-gray-100,
+.dark .border-gray-200,
+.dark .border-gray-300,
+.dark .border-slate-200\/80,
+.dark .border-slate-300\/80 {
+  border-color: rgba(255, 255, 255, 0.07) !important;
+}
+
+/* Primary Text Hierarchy: Crisp Near-White */
+.dark .text-slate-900,
+.dark .text-slate-800,
+.dark .text-gray-900,
+.dark .text-gray-800 {
+  color: #F8FAFC !important;
+}
+
+/* Secondary Text Hierarchy: Clear Cool Slate */
+.dark .text-slate-700,
+.dark .text-slate-600,
+.dark .text-gray-700,
+.dark .text-gray-600 {
+  color: #CBD5E1 !important;
+}
+
+/* Tertiary / Metadata Text: Subtle But Fully Readable */
+.dark .text-slate-500,
+.dark .text-slate-400,
+.dark .text-gray-500,
+.dark .text-gray-400 {
+  color: #8A99AD !important;
+}
+
+/* Interactive Hover: Subtle Luminous Shimmer (NO Giant Gray Hover Blocks) */
+.dark .hover\:bg-slate-50:hover,
+.dark .hover\:bg-slate-100:hover,
+.dark .hover\:bg-gray-50:hover,
+.dark .hover\:bg-gray-100:hover,
+.dark .hover\:bg-slate-50\/80:hover {
+  background-color: rgba(255, 255, 255, 0.04) !important;
+}
+
+.dark .hover\:text-slate-900:hover,
+.dark .hover\:text-slate-800:hover,
+.dark .hover\:text-gray-900:hover,
+.dark .hover\:text-gray-800:hover {
+  color: #FFFFFF !important;
+}
+
+/* Form Controls & Inputs: Deep Dark Inset Well */
+.dark input:not([type="checkbox"]):not([type="radio"]),
+.dark select,
+.dark textarea {
+  background-color: var(--input) !important;
+  color: #F8FAFC !important;
+  border-color: rgba(255, 255, 255, 0.09) !important;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #55657E !important;
+}
+
+.dark input:focus,
+.dark select:focus,
+.dark textarea:focus {
+  border-color: #3B82F6 !important;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25) !important;
+}
+
+/* Table Dividing Lines */
+.dark .divide-slate-100 > * + *,
+.dark .divide-slate-200 > * + *,
+.dark .divide-gray-100 > * + *,
+.dark .divide-gray-200 > * + * {
+  border-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+/* Activity Feed Rings & Timeline Hairlines */
+.dark .ring-white {
+  --tw-ring-color: var(--card) !important;
+}
+.dark .before\:bg-slate-200::before {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Semantic Badges: Translucent Vibrant Accents (Controlled & Elegant) */
+.dark .bg-blue-50 {
+  background-color: rgba(37, 99, 235, 0.14) !important;
+}
+.dark .text-blue-600,
+.dark .text-blue-700 {
+  color: #60A5FA !important;
+}
+.dark .border-blue-100,
+.dark .border-blue-200 {
+  border-color: rgba(59, 130, 246, 0.22) !important;
+}
+
+.dark .bg-emerald-50 {
+  background-color: rgba(16, 185, 129, 0.14) !important;
+}
+.dark .text-emerald-600,
+.dark .text-emerald-700 {
+  color: #34D399 !important;
+}
+.dark .border-emerald-100,
+.dark .border-emerald-200 {
+  border-color: rgba(16, 185, 129, 0.22) !important;
+}
+
+.dark .bg-purple-50 {
+  background-color: rgba(168, 85, 247, 0.14) !important;
+}
+.dark .text-purple-600,
+.dark .text-purple-700 {
+  color: #C084FC !important;
+}
+.dark .border-purple-100,
+.dark .border-purple-200 {
+  border-color: rgba(168, 85, 247, 0.22) !important;
+}
+
+.dark .bg-pink-50 {
+  background-color: rgba(236, 72, 153, 0.14) !important;
+}
+.dark .text-pink-600,
+.dark .text-pink-700 {
+  color: #F472B6 !important;
+}
+
+.dark .bg-amber-50 {
+  background-color: rgba(245, 158, 11, 0.14) !important;
+}
+.dark .text-amber-600,
+.dark .text-amber-700 {
+  color: #FBBF24 !important;
+}
+.dark .border-amber-100,
+.dark .border-amber-200 {
+  border-color: rgba(245, 158, 11, 0.22) !important;
+}
+
+.dark .bg-indigo-50 {
+  background-color: rgba(99, 102, 241, 0.14) !important;
+}
+.dark .text-indigo-600,
+.dark .text-indigo-700 {
+  color: #818CF8 !important;
+}
+.dark .border-indigo-100,
+.dark .border-indigo-200 {
+  border-color: rgba(99, 102, 241, 0.22) !important;
+}
+
+.dark .bg-red-50 {
+  background-color: rgba(239, 68, 68, 0.14) !important;
+}
+.dark .text-red-600,
+.dark .text-red-700 {
+  color: #F87171 !important;
+}
+.dark .border-red-100,
+.dark .border-red-200 {
+  border-color: rgba(239, 68, 68, 0.22) !important;
+}
+
+/* Modals & Dialogs Elevation: High Depth Floating Layers */
+.dark [role="dialog"],
+.dark .modal-content {
+  background-color: var(--popover) !important;
+  border-color: rgba(255, 255, 255, 0.09) !important;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.7), 0 8px 10px -6px rgba(0, 0, 0, 0.7) !important;
+}
+
+/* Skeletons: Subtle Modern Luminous Shimmer */
+.dark .animate-pulse .bg-slate-200,
+.dark .animate-pulse .bg-slate-300,
+.dark .bg-slate-200\/80 {
+  background-color: rgba(255, 255, 255, 0.06) !important;
+}
+.dark .animate-pulse .bg-slate-100 {
+  background-color: rgba(255, 255, 255, 0.03) !important;
+}
+
+/* Dark Mode Scrollbars */
+.dark ::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.dark ::-webkit-scrollbar-track {
+  background: transparent;
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.14);
+  border-radius: 9999px;
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
 }

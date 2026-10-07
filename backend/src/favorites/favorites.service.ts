@@ -60,7 +60,47 @@ export class FavoritesService {
   }
 
   // Get all favorites belonging to the logged-in user
-  async getFavorites(userId: string) {
+  async getFavorites(userId: string, page?: number, limit?: number) {
+    if (page && limit) {
+      const pageNum = Math.max(1, page);
+      const limitNum = Math.min(100, Math.max(1, limit));
+      const skip = (pageNum - 1) * limitNum;
+
+      const [total, favorites] = await Promise.all([
+        this.prisma.favorite.count({
+          where: {
+            userId,
+            file: { deletedAt: null },
+          },
+        }),
+        this.prisma.favorite.findMany({
+          where: {
+            userId,
+            file: { deletedAt: null },
+          },
+          include: {
+            file: true,
+          },
+          orderBy: {
+            createdAt: 'desc',
+          },
+          skip,
+          take: limitNum,
+        }),
+      ]);
+
+      return {
+        total,
+        page: pageNum,
+        limit: limitNum,
+        pageSize: limitNum,
+        totalPages: Math.ceil(total / limitNum),
+        favorites,
+        items: favorites,
+        data: favorites,
+      };
+    }
+
     return this.prisma.favorite.findMany({
       where: {
         userId,

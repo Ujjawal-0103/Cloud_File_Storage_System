@@ -2,19 +2,26 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 export function proxy(request: NextRequest) {
-  // Check if the user has an authentication token in their cookies
   const token = request.cookies.get('auth_token')?.value;
   const { pathname } = request.nextUrl;
 
-  // Identify if the user is on the login or register page
-  const isAuthPage = pathname.startsWith('/login') || pathname.startsWith('/register');
+  // Identify public auth & sharing pages
+  const isAuthPage =
+    pathname.startsWith('/login') ||
+    pathname.startsWith('/register') ||
+    pathname.startsWith('/forgot-password') ||
+    pathname.startsWith('/reset-password');
 
-  // Rule 1: If they are NOT logged in and try to access the dashboard, send them to /login
-  if (!token && !isAuthPage) {
+  const isPublicShare =
+    pathname.startsWith('/public') ||
+    pathname.startsWith('/api/backend/sharing/public');
+
+  // Rule 1: If not logged in and trying to access dashboard/protected routes -> redirect to /login
+  if (!token && !isAuthPage && !isPublicShare && pathname !== '/') {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
-  // Rule 2: If they ARE logged in and try to visit /login or /register, send them to the dashboard
+  // Rule 2: If logged in and trying to visit login/register -> redirect to /dashboard
   if (token && isAuthPage) {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
@@ -22,7 +29,9 @@ export function proxy(request: NextRequest) {
   return NextResponse.next();
 }
 
-// This tells Next.js to run this check on all pages except standard background files
+export const middleware = proxy;
+export default proxy;
+
 export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico|.*\\..*).*)'],
 };

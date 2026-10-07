@@ -21,9 +21,24 @@ export class SearchController {
   async search(
     @CurrentUser() user: any,
     @Query('q') query: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('pageSize') pageSize?: string,
   ) {
     if (!query || query.trim().length === 0) {
       throw new BadRequestException('Search query is required');
+    }
+
+    const pageNum = page ? Number(page) : undefined;
+    const limitNum = pageSize || limit ? Number(pageSize || limit) : undefined;
+
+    if (pageNum !== undefined || limitNum !== undefined) {
+      return this.searchService.search(
+        user.id,
+        query.trim(),
+        pageNum,
+        limitNum,
+      );
     }
 
     return this.searchService.search(

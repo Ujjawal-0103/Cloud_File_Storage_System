@@ -4,31 +4,35 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { registerSchema, RegisterFormValues } from "@/lib/validations/auth";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import Image from "next/image";
-import myLogo from "../login/CloudRage.png";
-import { Mail, Lock, User, Cloud, ArrowRight, Eye, EyeOff, AlertCircle } from "lucide-react";
+import { Mail, Lock, User, ArrowRight, Eye, EyeOff, AlertCircle, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { motion, type Variants } from "framer-motion";
+import PasswordStrengthMeter from "@/components/PasswordStrengthMeter";
 
 export default function RegisterPage() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<RegisterFormValues>({
+  const {
+    register,
+    handleSubmit,
+    watch,
+    formState: { errors, isSubmitting },
+  } = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
   });
+
+  const watchedPassword = watch("password") || "";
 
   const onSubmit = async (data: RegisterFormValues) => {
     try {
       setServerError(null);
 
-      // Strip confirmPassword out so it stays entirely on the frontend and never hits the backend DTO
+      // Strip confirmPassword out so it stays entirely on frontend
       const { confirmPassword, ...payload } = data;
 
       const response = await fetch("/api/backend/auth/register", {
@@ -44,8 +48,8 @@ export default function RegisterPage() {
           errorMessage = Array.isArray(errorData.message)
             ? errorData.message[0]
             : errorData.message || errorMessage;
-        } catch (e) {
-          // Fallback if response isn't JSON
+        } catch {
+          // Fallback
         }
         throw new Error(errorMessage);
       }
@@ -57,230 +61,207 @@ export default function RegisterPage() {
     }
   };
 
-  // Framer Motion Variants
-  const containerVariants: Variants = {
-    hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: { staggerChildren: 0.1 }
-    }
-  };
-
-  const itemVariants: Variants = {
-    hidden: { opacity: 0, y: 15 },
-    show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } }
+  const handleGoogleSignUp = () => {
+    if (isGoogleLoading || isSubmitting) return;
+    setIsGoogleLoading(true);
+    setServerError(null);
+    window.location.href = "/api/backend/auth/google";
   };
 
   return (
-    <div
-      className="relative flex min-h-screen items-center justify-center p-4 overflow-hidden bg-[#12162A]"
-      style={{
-        backgroundImage: `
-          radial-gradient(circle at 15% 20%, rgba(139,92,246,.18), transparent 30%),
-          radial-gradient(circle at 85% 80%, rgba(6,182,212,.15), transparent 35%),
-          radial-gradient(circle at 60% 10%, rgba(59,130,246,.08), transparent 25%)
-        `
-      }}
-    >
-      {/* Floating Animated Background Elements */}
-      <motion.div
-        animate={{ y: [0, -20, 0], opacity: [0.12, 0.18, 0.12] }}
-        transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-        className="absolute top-1/4 right-1/4"
-      >
-        <Cloud className="h-12 w-12 text-[#8B5CF6]" />
-      </motion.div>
-      <motion.div
-        animate={{ y: [0, 20, 0], opacity: [0.12, 0.18, 0.12] }}
-        transition={{ duration: 8, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-        className="absolute bottom-1/3 left-1/4"
-      >
-        <div className="h-3 w-3 rounded-full bg-[#06B6D4]" />
-      </motion.div>
-
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.5 }}
-        className="w-full max-w-md relative z-10 flex flex-col items-center my-8"
-      >
-        {/* BRANDING: Custom Direct-Import Logo */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          className="flex flex-col items-center mb-6"
-        >
-          <div className="relative w-40 h-40 overflow-hidden mb-2">
-            <Image
-              src={myLogo}
-              alt="CloudRage Logo"
-              fill
-              priority
-              className="object-contain mix-blend-screen"
-              style={{ filter: "invert(1) hue-rotate(180deg) brightness(1.2)" }}
-            />
+    <div className="min-h-screen bg-background flex flex-col justify-center items-center p-4 sm:p-6 text-foreground transition-colors">
+      <div className="w-full max-w-md space-y-6 my-8">
+        {/* Branding with enlarged logo */}
+        <div className="flex flex-col items-center text-center space-y-3">
+          <Image
+            src="/logo.png"
+            alt="CloudRage"
+            width={88}
+            height={88}
+            className="h-20 w-20 sm:h-22 sm:w-22 object-contain mx-auto transition-transform hover:scale-105 duration-200"
+            priority
+          />
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">Create your Account</h1>
+            <p className="text-xs text-muted-foreground mt-1">
+              Get started with 15 GB of secure cloud storage on CloudRage.
+            </p>
           </div>
-        </motion.div>
+        </div>
 
-        {/* Enhanced Glassmorphism Card */}
-        <div className="w-full bg-[rgba(22,27,48,0.72)] backdrop-blur-[20px] border border-white/10 shadow-[0_15px_40px_rgba(0,0,0,0.28)] rounded-[24px] overflow-hidden p-8">
-          <div className="text-center mb-6">
-            <h2 className="text-[24px] font-bold text-white mb-2">Create Account</h2>
-            <p className="text-[16px] text-[#B7C1D8]">Sign up to get started with CloudVault</p>
-          </div>
-
-          {/* Neon Violet Error Banner */}
+        {/* Auth Card */}
+        <div className="bg-card border border-border shadow-sm rounded-2xl p-6 sm:p-8 space-y-5 text-card-foreground">
           {serverError && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mb-6 p-4 rounded-xl bg-[#8B5CF6]/10 border border-[#8B5CF6]/30 flex items-center gap-3 text-[#C4B5FD] text-sm shadow-[0_0_15px_rgba(139,92,246,0.15)]"
-            >
-              <AlertCircle className="h-5 w-5 flex-shrink-0 text-[#8B5CF6]" />
-              <span>{serverError}</span>
-            </motion.div>
+            <div className="p-3.5 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 flex items-start space-x-2.5 text-red-700 dark:text-red-400 text-xs animate-in fade-in">
+              <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+              <span className="leading-relaxed">{serverError}</span>
+            </div>
           )}
 
-          <motion.form
-            variants={containerVariants}
-            initial="hidden"
-            animate="show"
-            onSubmit={handleSubmit(onSubmit)}
-            className="space-y-4"
-          >
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             {/* Name Field */}
-            <motion.div variants={itemVariants} className="space-y-1.5 relative">
-              <Label htmlFor="name" className="text-[14px] text-[#D3D8E7]">Full Name</Label>
-              <div className="relative group">
-                <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-[#7D879C] group-focus-within:text-[#8B5CF6] transition-colors" />
-                <Input
-                  id="name" type="text" placeholder="John Doe"
-                  className="pl-11 bg-white/5 border-white/10 text-[16px] text-[#F8FAFC] placeholder:text-[#7D879C] rounded-xl focus:border-[#8B5CF6] focus:shadow-[0_0_0_3px_rgba(139,92,246,0.25)] transition-all h-12"
+            <div className="space-y-1.5">
+              <label htmlFor="name" className="block text-xs font-semibold text-foreground/90">
+                Full Name
+              </label>
+              <div className="relative">
+                <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <input
+                  id="name"
+                  type="text"
+                  placeholder="John Doe"
+                  autoComplete="name"
+                  className="w-full rounded-xl bg-background border border-border pl-10 pr-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-all"
                   {...register("name")}
                 />
               </div>
-              {errors.name && <p className="text-xs text-red-400 pt-0.5">{errors.name.message}</p>}
-            </motion.div>
+              {errors.name && <p className="text-xs text-red-600 dark:text-red-400 pt-0.5">{errors.name.message}</p>}
+            </div>
 
             {/* Email Field */}
-            <motion.div variants={itemVariants} className="space-y-1.5 relative">
-              <Label htmlFor="email" className="text-[14px] text-[#D3D8E7]">Email Address</Label>
-              <div className="relative group">
-                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-[#7D879C] group-focus-within:text-[#8B5CF6] transition-colors" />
-                <Input
-                  id="email" type="email" placeholder="name@example.com"
-                  className="pl-11 bg-white/5 border-white/10 text-[16px] text-[#F8FAFC] placeholder:text-[#7D879C] rounded-xl focus:border-[#8B5CF6] focus:shadow-[0_0_0_3px_rgba(139,92,246,0.25)] transition-all h-12"
+            <div className="space-y-1.5">
+              <label htmlFor="email" className="block text-xs font-semibold text-foreground/90">
+                Email Address
+              </label>
+              <div className="relative">
+                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <input
+                  id="email"
+                  type="email"
+                  placeholder="name@example.com"
+                  autoComplete="email"
+                  className="w-full rounded-xl bg-background border border-border pl-10 pr-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-all"
                   {...register("email")}
                 />
               </div>
-              {errors.email && <p className="text-xs text-red-400 pt-0.5">{errors.email.message}</p>}
-            </motion.div>
+              {errors.email && <p className="text-xs text-red-600 dark:text-red-400 pt-0.5">{errors.email.message}</p>}
+            </div>
 
             {/* Password Field */}
-            <motion.div variants={itemVariants} className="space-y-1.5 relative">
-              <Label htmlFor="password" className="text-[14px] text-[#D3D8E7]">Password</Label>
-              <div className="relative group">
-                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-[#7D879C] group-focus-within:text-[#8B5CF6] transition-colors" />
-                <Input
-                  id="password" type={showPassword ? "text" : "password"} placeholder="••••••••"
-                  className="pl-11 pr-11 bg-white/5 border-white/10 text-[16px] text-[#F8FAFC] placeholder:text-[#7D879C] rounded-xl focus:border-[#8B5CF6] focus:shadow-[0_0_0_3px_rgba(139,92,246,0.25)] transition-all h-12"
+            <div className="space-y-1.5">
+              <label htmlFor="password" className="block text-xs font-semibold text-foreground/90">
+                Password
+              </label>
+              <div className="relative">
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="••••••••"
+                  autoComplete="new-password"
+                  className="w-full rounded-xl bg-background border border-border pl-10 pr-10 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-all"
                   {...register("password")}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#7D879C] hover:text-white transition-colors"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
-              {errors.password && <p className="text-xs text-red-400 pt-0.5">{errors.password.message}</p>}
-            </motion.div>
 
-            {/* Confirm Password Field (Frontend Only Safety Check) */}
-            <motion.div variants={itemVariants} className="space-y-1.5 relative">
-              <Label htmlFor="confirmPassword" className="text-[14px] text-[#D3D8E7]">Confirm Password</Label>
-              <div className="relative group">
-                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-[#7D879C] group-focus-within:text-[#8B5CF6] transition-colors" />
-                <Input
-                  id="confirmPassword" type={showConfirmPassword ? "text" : "password"} placeholder="••••••••"
-                  className="pl-11 pr-11 bg-white/5 border-white/10 text-[16px] text-[#F8FAFC] placeholder:text-[#7D879C] rounded-xl focus:border-[#8B5CF6] focus:shadow-[0_0_0_3px_rgba(139,92,246,0.25)] transition-all h-12"
+              {/* Real Password Strength Detector */}
+              <PasswordStrengthMeter password={watchedPassword} />
+
+              {errors.password && <p className="text-xs text-red-600 dark:text-red-400 pt-0.5">{errors.password.message}</p>}
+            </div>
+
+            {/* Confirm Password Field */}
+            <div className="space-y-1.5">
+              <label htmlFor="confirmPassword" className="block text-xs font-semibold text-foreground/90">
+                Confirm Password
+              </label>
+              <div className="relative">
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <input
+                  id="confirmPassword"
+                  type={showConfirmPassword ? "text" : "password"}
+                  placeholder="••••••••"
+                  autoComplete="new-password"
+                  className="w-full rounded-xl bg-background border border-border pl-10 pr-10 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-all"
                   {...register("confirmPassword")}
                 />
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#7D879C] hover:text-white transition-colors"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                  aria-label={showConfirmPassword ? "Hide password" : "Show password"}
                 >
                   {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
-              {errors.confirmPassword && <p className="text-xs text-red-400 pt-0.5">{errors.confirmPassword.message}</p>}
-            </motion.div>
+              {errors.confirmPassword && (
+                <p className="text-xs text-red-600 dark:text-red-400 pt-0.5">{errors.confirmPassword.message}</p>
+              )}
+            </div>
 
             {/* Primary Submit Button */}
-            <motion.div variants={itemVariants} className="pt-2">
-              <Button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full text-[16px] font-semibold bg-gradient-to-r from-[#8B5CF6] via-[#6366F1] to-[#06B6D4] hover:scale-[1.03] active:scale-[0.98] text-white py-6 shadow-[0_0_20px_rgba(139,92,246,0.3)] transition-all rounded-[14px]"
-              >
-                {isSubmitting ? (
-                  <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }} className="w-5 h-5 border-2 border-white border-t-transparent rounded-full" />
-                ) : (
-                  <>Create Account <ArrowRight className="ml-2 h-5 w-5" /></>
-                )}
-              </Button>
-            </motion.div>
-          </motion.form>
+            <button
+              type="submit"
+              disabled={isSubmitting || isGoogleLoading}
+              className="w-full inline-flex items-center justify-center space-x-2 py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold shadow-xs disabled:opacity-50 transition-all cursor-pointer pt-2"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>Creating Account...</span>
+                </>
+              ) : (
+                <>
+                  <span>Create Account</span>
+                  <ArrowRight className="h-4 w-4" />
+                </>
+              )}
+            </button>
+          </form>
 
-          {/* Divider */}
-          <div className="relative my-6">
+          {/* Social Divider */}
+          <div className="relative my-4">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-white/10" />
+              <div className="w-full border-t border-border" />
             </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-[#161b30] px-3 text-[#7D879C]">Or continue with</span>
+            <div className="relative flex justify-center text-[11px] uppercase tracking-wider">
+              <span className="bg-card px-2.5 text-muted-foreground font-medium">Or continue with</span>
             </div>
           </div>
 
-          {/* Social Logins */}
-          <div className="grid grid-cols-2 gap-3">
+          {/* Social Logins: Continue with Google */}
+          <div>
             <button
               type="button"
-              onClick={() => alert("Google sign-up integration")}
-              className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-white text-sm font-medium transition-all hover:scale-[1.02]"
+              onClick={handleGoogleSignUp}
+              disabled={isGoogleLoading || isSubmitting}
+              className="w-full flex items-center justify-center gap-2.5 py-2.5 px-4 rounded-xl bg-background border border-border hover:bg-muted/70 text-foreground text-xs font-semibold transition-all shadow-2xs disabled:opacity-60 cursor-pointer"
             >
-              <svg className="h-4 w-4" viewBox="0 0 24 24">
-                <path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.6l3.1-3.1C17.3 1.8 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.4l3.7 2.9C6.5 7.3 9 5 12 5z" />
-                <path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.8z" />
-                <path fill="#FBBC05" d="M5.6 14.7c-.2-.7-.4-1.5-.4-2.7s.2-2 .4-2.7L1.9 6.4C.7 8.8 0 11.3 0 14s.7 5.2 1.9 7.6l3.7-2.9z" />
-                <path fill="#34A853" d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.3-6.4-5.3L1.9 15.9C3.7 19.7 7.5 23 12 23z" />
-              </svg>
-              Google
-            </button>
-
-            <button
-              type="button"
-              onClick={() => alert("GitHub sign-up integration")}
-              className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-white text-sm font-medium transition-all hover:scale-[1.02]"
-            >
-              <svg className="h-4 w-4 fill-current text-white" viewBox="0 0 24 24">
-                <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
-              </svg>
-              GitHub
+              {isGoogleLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+                  <span>Connecting to Google...</span>
+                </>
+              ) : (
+                <>
+                  <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24" aria-hidden="true">
+                    <path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.6l3.1-3.1C17.3 1.8 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.4l3.7 2.9C6.5 7.3 9 5 12 5z" />
+                    <path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.8z" />
+                    <path fill="#FBBC05" d="M5.6 14.7c-.2-.7-.4-1.5-.4-2.7s.2-2 .4-2.7L1.9 6.4C.7 8.8 0 11.3 0 14s.7 5.2 1.9 7.6l3.7-2.9z" />
+                    <path fill="#34A853" d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.3-6.4-5.3L1.9 15.9C3.7 19.7 7.5 23 12 23z" />
+                  </svg>
+                  <span>Continue with Google</span>
+                </>
+              )}
             </button>
           </div>
 
-          <div className="mt-6 text-center text-sm text-[#B7C1D8]">
+          <div className="pt-2 text-center text-xs text-muted-foreground">
             Already have an account?{" "}
-            <Link href="/login" className="text-[#3B82F6] font-semibold hover:text-[#8B5CF6] transition-colors">
+            <Link href="/login" className="text-blue-600 dark:text-blue-400 font-semibold hover:underline transition-colors">
               Sign in here
             </Link>
           </div>
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 }

@@ -19,6 +19,16 @@ export class UsersService {
   }
 
   async findByEmail(email: string) {
+    if (typeof this.prisma.user.findFirst === 'function') {
+      return this.prisma.user.findFirst({
+        where: {
+          email: {
+            equals: email,
+            mode: 'insensitive',
+          },
+        },
+      });
+    }
     return this.prisma.user.findUnique({
       where: {
         email,
@@ -88,7 +98,7 @@ export class UsersService {
       throw new NotFoundException('User not found');
     }
 
-    if (currentPassword) {
+    if (user.password && currentPassword) {
       const isMatch = await bcrypt.compare(
         currentPassword,
         user.password,
@@ -98,6 +108,8 @@ export class UsersService {
           'Current password is incorrect',
         );
       }
+    } else if (user.password && !currentPassword) {
+      throw new BadRequestException('Current password is required');
     }
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);

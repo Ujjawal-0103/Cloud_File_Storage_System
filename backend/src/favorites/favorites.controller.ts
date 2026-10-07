@@ -4,6 +4,7 @@ import {
   Get,
   Param,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 
@@ -49,9 +50,16 @@ export class FavoritesController {
       id: string;
       email: string;
     },
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('pageSize') pageSize?: string,
   ) {
+    const pageNum = page ? Number(page) : undefined;
+    const limitNum = pageSize || limit ? Number(pageSize || limit) : undefined;
     return this.favoritesService.getFavorites(
       user.id,
+      pageNum,
+      limitNum,
     );
   }
 

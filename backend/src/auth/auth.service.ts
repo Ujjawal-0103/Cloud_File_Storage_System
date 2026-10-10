@@ -294,16 +294,20 @@ export class AuthService {
     const callbackUrl =
       this.configService?.get<string>('GOOGLE_CALLBACK_URL') ||
       process.env.GOOGLE_CALLBACK_URL ||
-      'http://localhost:3001/api/auth/google/callback';
+      (process.env.RENDER_EXTERNAL_URL
+        ? `${process.env.RENDER_EXTERNAL_URL.replace(/\/$/, '')}/api/auth/google/callback`
+        : 'http://localhost:3001/api/auth/google/callback');
 
     if (!clientId) {
       const frontendUrl = (
         this.configService?.get<string>('FRONTEND_URL') ||
         process.env.FRONTEND_URL ||
-        'http://localhost:3000'
+        (process.env.NODE_ENV === 'production'
+          ? 'https://cloud-file-storage-system-five.vercel.app'
+          : 'http://localhost:3000')
       ).replace(/\/$/, '');
       return `${frontendUrl}/login?error=${encodeURIComponent(
-        'Google OAuth is not configured. Please set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in backend .env',
+        'Google OAuth is not configured. Please set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in backend environment variables.',
       )}`;
     }
 
@@ -331,7 +335,9 @@ export class AuthService {
     const callbackUrl =
       this.configService?.get<string>('GOOGLE_CALLBACK_URL') ||
       process.env.GOOGLE_CALLBACK_URL ||
-      'http://localhost:3001/api/auth/google/callback';
+      (process.env.RENDER_EXTERNAL_URL
+        ? `${process.env.RENDER_EXTERNAL_URL.replace(/\/$/, '')}/api/auth/google/callback`
+        : 'http://localhost:3001/api/auth/google/callback');
 
     if (!clientId || !clientSecret) {
       throw new BadRequestException(

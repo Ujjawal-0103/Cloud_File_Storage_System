@@ -23,7 +23,8 @@ function CallbackHandler() {
 
       if (token) {
         // Store auth token in cookie
-        document.cookie = `auth_token=${token}; path=/; max-age=604800; SameSite=Lax`;
+        const isSecure = typeof window !== "undefined" && window.location.protocol === "https:";
+        document.cookie = `auth_token=${token}; path=/; max-age=604800; SameSite=Lax${isSecure ? "; Secure" : ""}`;
 
         // Store display info in localStorage
         if (name) {

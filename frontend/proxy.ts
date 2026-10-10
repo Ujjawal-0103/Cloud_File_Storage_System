@@ -12,12 +12,14 @@ export function proxy(request: NextRequest) {
     pathname.startsWith('/forgot-password') ||
     pathname.startsWith('/reset-password');
 
+  const isAuthCallback = pathname.startsWith('/auth/callback');
+
   const isPublicShare =
     pathname.startsWith('/public') ||
     pathname.startsWith('/api/backend/sharing/public');
 
   // Rule 1: If not logged in and trying to access dashboard/protected routes -> redirect to /login
-  if (!token && !isAuthPage && !isPublicShare && pathname !== '/') {
+  if (!token && !isAuthPage && !isAuthCallback && !isPublicShare && pathname !== '/') {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 

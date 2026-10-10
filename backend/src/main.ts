@@ -33,22 +33,41 @@ async function bootstrap() {
   );
 
   // 3. CORS Configuration
-  const allowedOrigins: string[] = [
+  const explicitOrigins: string[] = [
     'http://localhost:3000',
     'https://cloud-file-storage-system-five.vercel.app',
   ];
   if (process.env.FRONTEND_URL) {
     const configuredFrontend = process.env.FRONTEND_URL.replace(/\/$/, '');
-    if (!allowedOrigins.includes(configuredFrontend)) {
-      allowedOrigins.push(configuredFrontend);
+    if (!explicitOrigins.includes(configuredFrontend)) {
+      explicitOrigins.push(configuredFrontend);
     }
   }
 
   app.enableCors({
-    origin: allowedOrigins,
+    origin: (origin: any, callback: any) => {
+      // Allow requests with no origin (e.g. server-to-server proxy, mobile apps, curl)
+      if (!origin) return callback(null, true);
+      if (
+        explicitOrigins.includes(origin) ||
+        (typeof origin === 'string' && origin.endsWith('.vercel.app'))
+      ) {
+        return callback(null, true);
+      }
+      return callback(new Error(`Origin ${origin} not allowed by CORS`), false);
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+  });
+
+  // Root health endpoint for deployment monitors and Render health checks
+  app.getHttpAdapter().get('/', (_req: any, res: any) => {
+    res.json({
+      status: 'ok',
+      service: 'CloudRage Backend API',
+      timestamp: new Date().toISOString(),
+    });
   });
 
   // Route Normalization: seamlessly route both /api/* and direct /* controller paths

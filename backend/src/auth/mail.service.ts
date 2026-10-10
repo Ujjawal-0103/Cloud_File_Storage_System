@@ -113,7 +113,9 @@ export class MailService {
     const frontendUrl =
       this.configService.get<string>('FRONTEND_URL') ||
       process.env.FRONTEND_URL ||
-      'http://localhost:3000';
+      (process.env.NODE_ENV === 'production'
+        ? 'https://cloud-file-storage-system-five.vercel.app'
+        : 'http://localhost:3000');
 
     const resetUrl = `${frontendUrl.replace(/\/$/, '')}/reset-password?token=${encodeURIComponent(resetToken)}`;
 

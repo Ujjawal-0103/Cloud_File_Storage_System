@@ -58,7 +58,8 @@ function LoginForm() {
 
       // Store the returned JWT token in cookies
       if (result.access_token) {
-        document.cookie = `auth_token=${result.access_token}; path=/; max-age=604800; SameSite=Lax`;
+        const isSecure = typeof window !== "undefined" && window.location.protocol === "https:";
+        document.cookie = `auth_token=${result.access_token}; path=/; max-age=604800; SameSite=Lax${isSecure ? "; Secure" : ""}`;
       }
 
       // Format name nicely

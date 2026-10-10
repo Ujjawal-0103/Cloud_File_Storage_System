@@ -127,7 +127,10 @@ export class AuthController {
     @Res() res: Response,
   ) {
     const frontendUrl = (
-      process.env.FRONTEND_URL || 'http://localhost:3000'
+      process.env.FRONTEND_URL ||
+      (process.env.NODE_ENV === 'production'
+        ? 'https://cloud-file-storage-system-five.vercel.app'
+        : 'http://localhost:3000')
     ).replace(/\/$/, '');
 
     // Parse cookies from headers

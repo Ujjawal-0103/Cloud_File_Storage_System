@@ -43,4 +43,52 @@ describe('CloudinaryService', () => {
     expect(cloudinary.uploader.destroy).toHaveBeenCalled();
     expect(res).toEqual({ result: 'ok' });
   });
+
+  it('should throw BadRequestException if file buffer is missing or empty', async () => {
+    const invalidFile: any = { originalname: 'test.png', mimetype: 'image/png', buffer: Buffer.from('') };
+    await expect(service.uploadFile(invalidFile)).rejects.toThrow();
+  });
+
+  it('should reject with Error when cloudinary callback returns error', async () => {
+    const mockStream: any = {
+      on: jest.fn().mockReturnThis(),
+      end: jest.fn(),
+    };
+    (cloudinary.uploader.upload_stream as jest.Mock).mockImplementation((opts, cb) => {
+      // Simulate Cloudinary callback error
+      setTimeout(() => cb({ message: 'cloud_name is disabled', http_code: 401 }, null), 0);
+      return mockStream;
+    });
+
+    const mockFile: any = {
+      originalname: 'test.png',
+      mimetype: 'image/png',
+      buffer: Buffer.from('data'),
+      size: 4,
+    };
+
+    await expect(service.uploadFile(mockFile)).rejects.toThrow('Cloudinary upload failed: cloud_name is disabled');
+  });
+
+  it('should resolve with result when cloudinary upload succeeds', async () => {
+    const mockStream: any = {
+      on: jest.fn().mockReturnThis(),
+      end: jest.fn(),
+    };
+    (cloudinary.uploader.upload_stream as jest.Mock).mockImplementation((opts, cb) => {
+      setTimeout(() => cb(null, { secure_url: 'https://res.cloudinary.com/test.png', public_id: 'pid-1', bytes: 100 }), 0);
+      return mockStream;
+    });
+
+    const mockFile: any = {
+      originalname: 'test.png',
+      mimetype: 'image/png',
+      buffer: Buffer.from('data'),
+      size: 4,
+    };
+
+    const res = await service.uploadFile(mockFile);
+    expect(res).toHaveProperty('secure_url', 'https://res.cloudinary.com/test.png');
+    expect(res).toHaveProperty('public_id', 'pid-1');
+  });
 });

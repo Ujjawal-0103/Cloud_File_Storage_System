@@ -93,6 +93,38 @@ describe('FilesService', () => {
       expect(prisma.file.create).toHaveBeenCalled();
       expect(res.file).toHaveProperty('id', 'file-1');
     });
+
+    it('should throw NotFoundException if specified destination folder does not exist', async () => {
+      prisma.folder.findFirst.mockResolvedValue(null);
+
+      const mockFile: any = {
+        originalname: 'test.png',
+        mimetype: 'image/png',
+        size: 100,
+        buffer: Buffer.from('data'),
+      };
+
+      await expect(service.uploadFile(mockFile, 'user-1', 'nonexistent-folder')).rejects.toThrow(
+        NotFoundException,
+      );
+      expect(cloudinary.uploadFile).not.toHaveBeenCalled();
+    });
+
+    it('should clean up Cloudinary asset if database persistence fails after upload', async () => {
+      prisma.file.aggregate.mockResolvedValue({ _sum: { size: 0 } });
+      cloudinary.uploadFile.mockResolvedValue({ secure_url: 'https://cloud.com/f.png', public_id: 'pid-failed' });
+      prisma.file.create.mockRejectedValue(new Error('Database connection failed'));
+
+      const mockFile: any = {
+        originalname: 'test.png',
+        mimetype: 'image/png',
+        size: 100,
+        buffer: Buffer.from('data'),
+      };
+
+      await expect(service.uploadFile(mockFile, 'user-1')).rejects.toThrow('Database connection failed');
+      expect(cloudinary.deleteFile).toHaveBeenCalledWith('pid-failed', 'image/png');
+    });
   });
 
   describe('renameFile', () => {

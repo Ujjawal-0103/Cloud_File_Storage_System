@@ -3,6 +3,7 @@ import {
   NotFoundException,
   BadRequestException,
   Optional,
+  Logger,
 } from '@nestjs/common';
 import { ActivityType } from '@prisma/client';
 
@@ -14,6 +15,8 @@ export const STORAGE_QUOTA_BYTES = 15 * 1024 * 1024 * 1024; // 15 GB
 
 @Injectable()
 export class FilesService {
+  private readonly logger = new Logger(FilesService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly cloudinaryService: CloudinaryService,
@@ -195,6 +198,30 @@ export class FilesService {
     userId: string,
     folderId?: string,
   ) {
+    if (!file) {
+      throw new BadRequestException(
+        'No file received. Make sure the form field is named "file".',
+      );
+    }
+
+    if (!file.buffer || file.buffer.length === 0) {
+      throw new BadRequestException('Uploaded file buffer is empty or corrupted');
+    }
+
+    const sanitizedFolderId =
+      folderId && folderId !== 'root' && folderId !== 'null' && folderId !== 'undefined'
+        ? folderId
+        : null;
+
+    if (sanitizedFolderId) {
+      const folder = await this.prisma.folder.findFirst({
+        where: { id: sanitizedFolderId, ownerId: userId, deletedAt: null },
+      });
+      if (!folder) {
+        throw new NotFoundException('Destination folder not found or unauthorized');
+      }
+    }
+
     // 1. Quota Enforcement BEFORE Cloudinary upload
     const currentUsage = await this.prisma.file.aggregate({
       where: {
@@ -207,7 +234,7 @@ export class FilesService {
     });
 
     const usedBytes = currentUsage._sum.size || 0;
-    const incomingSize = file.size || 0;
+    const incomingSize = Number(file.size) || (file.buffer ? file.buffer.length : 0);
 
     if (usedBytes + incomingSize > STORAGE_QUOTA_BYTES) {
       throw new BadRequestException(
@@ -215,34 +242,66 @@ export class FilesService {
       );
     }
 
+    this.logger.log(
+      `[Upload] Starting file upload for user ${userId}: "${file.originalname}" (${incomingSize} bytes, ${file.mimetype})`,
+    );
+
     // 2. Upload to Cloudinary
     const result: any = await this.cloudinaryService.uploadFile(file);
 
-    // 3. Save to database
-    const savedFile = await this.prisma.file.create({
-      data: {
-        name: file.originalname || result.public_id,
-        originalName: file.originalname,
-        url: result.secure_url,
-        publicId: result.public_id,
-        size: file.size,
-        mimeType: file.mimetype,
-        ownerId: userId,
-        folderId: folderId || null,
-      },
-    });
+    // 3. Save to database with automatic rollback if DB persistence fails
+    let savedFile: any;
+    try {
+      savedFile = await this.prisma.file.create({
+        data: {
+          name: file.originalname || result.public_id,
+          originalName: file.originalname,
+          url: result.secure_url || result.url,
+          publicId: result.public_id,
+          size: incomingSize || Number(result.bytes) || 0,
+          mimeType: file.mimetype || 'application/octet-stream',
+          ownerId: userId,
+          folderId: sanitizedFolderId,
+        },
+      });
+    } catch (dbError) {
+      this.logger.error(
+        `[Upload] Database persistence failed for file "${file.originalname}". Cleaning up Cloudinary asset ${result.public_id}`,
+        dbError,
+      );
+      try {
+        await this.cloudinaryService.deleteFile(result.public_id, file.mimetype);
+      } catch (cleanupErr) {
+        this.logger.warn(
+          `[Upload] Failed to clean up Cloudinary asset ${result.public_id}:`,
+          cleanupErr,
+        );
+      }
+      throw dbError;
+    }
 
-    // 4. Log upload activity
-    await this.prisma.activityLog.create({
-      data: {
-        action: ActivityType.UPLOAD,
-        userId,
-        fileId: savedFile.id,
-        folderId: folderId || null,
-      },
-    });
+    // 4. Log upload activity safely
+    try {
+      await this.prisma.activityLog.create({
+        data: {
+          action: ActivityType.UPLOAD,
+          userId,
+          fileId: savedFile.id,
+          folderId: sanitizedFolderId,
+        },
+      });
+    } catch (activityErr) {
+      this.logger.warn(
+        `[Upload] Failed to record upload activity log for file ${savedFile.id}:`,
+        activityErr,
+      );
+    }
 
     this.invalidateCache(userId);
+
+    this.logger.log(
+      `[Upload] File upload successfully completed: id=${savedFile.id}, name="${savedFile.name}"`,
+    );
 
     return {
       message: 'File uploaded successfully',

@@ -35,7 +35,7 @@ async function bootstrap() {
   // 3. CORS Configuration
   const explicitOrigins: string[] = [
     'http://localhost:3000',
-    'https://cloud-file-storage-system-five.vercel.app',
+    'https://cloudrage.onrender.com',
   ];
   if (process.env.FRONTEND_URL) {
     const configuredFrontend = process.env.FRONTEND_URL.replace(/\/$/, '');

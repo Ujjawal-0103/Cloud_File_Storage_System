@@ -134,12 +134,18 @@ npm run start:prod
 
 ---
 
-# Swagger
+# Swagger API Documentation
 
-Once the backend is running
+Once the backend is running locally:
 
+```text
+http://localhost:3001/api/docs
 ```
-http://localhost:3001/api
+
+In production on Render:
+
+```text
+https://cloudrage-backend.onrender.com/api/docs
 ```
 
 ---

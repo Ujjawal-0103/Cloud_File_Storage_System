@@ -303,7 +303,7 @@ export class AuthService {
         this.configService?.get<string>('FRONTEND_URL') ||
         process.env.FRONTEND_URL ||
         (process.env.NODE_ENV === 'production'
-          ? 'https://cloud-file-storage-system-five.vercel.app'
+          ? 'https://cloudrage.onrender.com'
           : 'http://localhost:3000')
       ).replace(/\/$/, '');
       return `${frontendUrl}/login?error=${encodeURIComponent(

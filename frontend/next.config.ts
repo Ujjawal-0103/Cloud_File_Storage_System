@@ -2,13 +2,13 @@ import type { NextConfig } from "next";
 
 import path from "path";
 
-const isVercel = Boolean(process.env.VERCEL || process.env.NEXT_PUBLIC_VERCEL_ENV);
+const isProductionDeploy = Boolean(process.env.RENDER || process.env.VERCEL);
 const rawBackendUrl = process.env.BACKEND_URL;
 
-if (isVercel && !rawBackendUrl) {
+if (isProductionDeploy && !rawBackendUrl) {
   throw new Error(
-    '[CloudRage Production Configuration Error] BACKEND_URL environment variable is missing on Vercel!\n' +
-    'The production frontend cannot communicate with localhost. Please configure BACKEND_URL in your Vercel Project Settings -> Environment Variables with your deployed Render backend URL (e.g., https://your-backend.onrender.com).'
+    '[CloudRage Production Configuration Error] BACKEND_URL environment variable is missing on Render!\n' +
+    'The production frontend cannot communicate with localhost. Please configure BACKEND_URL in your Render Web Service Environment Variables with your deployed Render backend URL: https://cloudrage-backend.onrender.com'
   );
 }
 

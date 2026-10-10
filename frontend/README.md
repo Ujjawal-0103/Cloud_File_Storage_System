@@ -58,43 +58,42 @@ npm install
 
 # Environment Variables
 
-Create
-
-```
-.env.local
-```
-
-Example
+Create `.env.local` inside the frontend directory:
 
 ```env
-NEXT_PUBLIC_API_URL=http://localhost:3001
+# Backend API URL for Next.js proxy rewrite (/api/backend/*)
+# Local development:
+BACKEND_URL=http://localhost:3001
+
+# Production (Render Web Service):
+# BACKEND_URL=https://cloudrage-backend.onrender.com
 ```
 
 ---
 
 # Run Frontend
 
-Development
+Development:
 
 ```bash
 npm run dev
 ```
 
-Production
+Production build & start:
 
 ```bash
 npm run build
-
 npm run start
 ```
 
 ---
 
-# Open Application
+# URLs
 
-```
-http://localhost:3000
-```
+| Environment | URL |
+|---|---|
+| Local Development | http://localhost:3000 |
+| Production (Render) | https://cloudrage.onrender.com |
 
 ---
 
